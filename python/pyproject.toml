@@ -1,0 +1,21 @@
+[project]
+name = "acp-sdk"
+version = "2.0.0"
+description = "Agent Communication Protocol SDK"
+readme = "README.md"
+authors = []
+requires-python = ">=3.11, <4.0"
+dependencies = [
+    "aiohttp>=3.11.14",
+    "aiohttp-sse-client>=0.2.1",
+    "beeai-framework>=0.1.4",
+    "fastapi[standard]>=0.115.8",
+]
+
+[project.scripts]
+server = "acp_sdk.test:test_server"
+client = "acp_sdk.test:test_client"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
