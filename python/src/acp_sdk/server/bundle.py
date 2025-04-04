@@ -1,11 +1,21 @@
 import asyncio
 import logging
+
+from opentelemetry import trace
+from pydantic import ValidationError
+
 from acp_sdk.server.agent import Agent
 from acp_sdk.models import (
     ACPError,
+    AnyModel,
     Await,
     AwaitEvent,
+    CancelledEvent,
+    CompletedEvent,
+    CreatedEvent,
+    FailedEvent,
     GenericEvent,
+    InProgressEvent,
     Message,
     MessageEvent,
     Run,
@@ -14,8 +24,6 @@ from acp_sdk.models import (
     RunStatus,
 )
 from acp_sdk.server.context import Context
-from pydantic import BaseModel
-
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -26,7 +34,7 @@ class RunBundle:
         self.run = run
         self.task = task
 
-        self.stream_queue: asyncio.Queue[Message] = asyncio.Queue()
+        self.stream_queue: asyncio.Queue[RunEvent] = asyncio.Queue()
         self.composed_message = Message()
 
         self.await_queue: asyncio.Queue[AwaitResume] = asyncio.Queue(maxsize=1)
@@ -61,54 +69,65 @@ class RunBundle:
         await self.await_or_terminate_event.wait()
 
     async def execute(self, input: Message):
-        run_logger = logging.LoggerAdapter(logger, {"run_id": self.run.run_id})
+        with trace.get_tracer(__name__).start_as_current_span("execute"):
+            run_logger = logging.LoggerAdapter(logger, {"run_id": self.run.run_id})
 
-        try:
-            self.run.session_id = await self.agent.session(self.run.session_id)
-            run_logger.info("Session loaded")
+            await self.emit(CreatedEvent(run=self.run))
+            try:
+                self.run.session_id = await self.agent.session(self.run.session_id)
+                run_logger.info("Session loaded")
 
-            generator = self.agent.run(
-                input=input, context=Context(session_id=self.run.session_id)
-            )
-            run_logger.info("Run started")
+                generator = self.agent.run(
+                    input=input, context=Context(session_id=self.run.session_id)
+                )
+                run_logger.info("Run started")
 
-            await_resume = None
-            while True:
                 self.run.status = RunStatus.IN_PROGRESS
-                next = await generator.asend(await_resume)
-                if isinstance(next, Message):
-                    self.composed_message += next
-                    await self.emit(MessageEvent(run_id=self.run.run_id, message=next))
-                elif isinstance(next, Await):
-                    self.run.await_ = next
-                    self.run.status = RunStatus.AWAITING
-                    await self.emit(
-                        AwaitEvent.model_validate(
-                            {
-                                "run_id": self.run.run_id,
-                                "type": "await",
-                                "await": next,
-                            }
+                await self.emit(InProgressEvent(run=self.run))
+
+                await_resume = None
+                while True:
+                    next = await generator.asend(await_resume)
+                    if isinstance(next, Message):
+                        self.composed_message += next
+                        await self.emit(MessageEvent(message=next))
+                    elif isinstance(next, Await):
+                        self.run.await_ = next
+                        self.run.status = RunStatus.AWAITING
+                        await self.emit(
+                            AwaitEvent.model_validate(
+                                {
+                                    "run_id": self.run.run_id,
+                                    "type": "await",
+                                    "await": next,
+                                }
+                            )
                         )
-                    )
-                    run_logger.info("Run awaited")
-                    await_resume = await self.await_()
-                    run_logger.info("Run resumed")
-                if isinstance(next, BaseModel):
-                    await self.emit(GenericEvent(run_id=self.run.run_id, generic=next))
-                else:
-                    raise TypeError("Not a pydantic model")
-        except StopAsyncIteration:
-            self.run.output = self.composed_message
-            self.run.status = RunStatus.COMPLETED
-            run_logger.info("Run completed")
-        except asyncio.CancelledError:
-            self.run.status = RunStatus.CANCELLED
-            run_logger.info("Run cancelled")
-        except Exception as e:
-            self.run.error = ACPError(code="unspecified", message=str(e))
-            self.run.status = RunStatus.FAILED
-            run_logger.exception("Run failed")
-        finally:
-            self.await_or_terminate_event.set()
-            self.stream_queue.shutdown()
+                        run_logger.info("Run awaited")
+                        await_resume = await self.await_()
+                        self.run.status = RunStatus.IN_PROGRESS
+                        await self.emit(InProgressEvent(run=self.run))
+                        run_logger.info("Run resumed")
+                    else:
+                        try:
+                            generic = AnyModel.model_validate(next)
+                            await self.emit(GenericEvent(generic=generic))
+                        except ValidationError:
+                            raise TypeError("Invalid yield")
+            except StopAsyncIteration:
+                self.run.output = self.composed_message
+                self.run.status = RunStatus.COMPLETED
+                await self.emit(CompletedEvent(run=self.run))
+                run_logger.info("Run completed")
+            except asyncio.CancelledError:
+                self.run.status = RunStatus.CANCELLED
+                await self.emit(CancelledEvent(run=self.run))
+                run_logger.info("Run cancelled")
+            except Exception as e:
+                self.run.error = ACPError(code="unspecified", message=str(e))
+                self.run.status = RunStatus.FAILED
+                await self.emit(FailedEvent(run=self.run))
+                run_logger.exception("Run failed")
+            finally:
+                self.await_or_terminate_event.set()
+                self.stream_queue.shutdown()

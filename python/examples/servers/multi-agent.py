@@ -1,6 +1,7 @@
 import asyncio
 from typing import AsyncGenerator
 import uuid
+
 from acp_sdk.models import (
     Message,
     Await,
@@ -20,27 +21,57 @@ from beeai_framework.tools.weather.openmeteo import OpenMeteoTool
 from acp_sdk.server.context import Context
 
 
-# from acp_sdk.client import create_client
-
-
 class EchoAgent(Agent):
+    @property
+    def name(self):
+        return "echo"
+
+    @property
+    def description(self):
+        return "Echoes everything"
+
     async def run(self, input: Message, *, context: Context):
         yield input
 
 
 class LazyEchoAgent(Agent):
+    @property
+    def name(self):
+        return "lazy_echo"
+
+    @property
+    def description(self):
+        return "Echoes everything with 1 minute delay"
+
     async def run(self, input: Message, *, context: Context):
-        await asyncio.sleep(100)
+        await asyncio.sleep(60)
         yield input
 
 
 class StreamingEchoAgent(Agent):
+    @property
+    def name(self):
+        return "streaming_echo"
+
+    @property
+    def description(self):
+        return "Echoes all message parts in a stream"
+
     async def run(self, input: Message, *, context: Context):
         for part in input:
+            yield {"thought": "nothing really"}
             yield Message(part)
 
 
 class AwaitingAgent(Agent):
+    @property
+    def name(self):
+        return "awaiting"
+
+    @property
+    def description(self):
+        return "Greets and awaits for more data"
+
     async def run(
         self, input: Message, *, context: Context
     ) -> AsyncGenerator[Message | Await, AwaitResume]:
@@ -55,6 +86,14 @@ class BeeAIAgent(Agent):
             "ollama:llama3.1",
             ChatModelParameters(temperature=0),
         )
+
+    @property
+    def name(self):
+        return "beeai"
+
+    @property
+    def description(self):
+        return "Beeai agent powered by ollama and no tools"
 
     async def run(self, input: Message, *, context: Context):
         memory = TokenMemory(self.llm)
@@ -85,6 +124,14 @@ class BeeAIAgentAdvanced(Agent):
         ]
         self.memories: dict[SessionId, TokenMemory] = dict()
 
+    @property
+    def name(self):
+        return "beeai_advanced"
+
+    @property
+    def description(self):
+        return "Beeai agent powered by ollama with tools and sessions"
+
     async def session(self, session_id: SessionId | None):
         if session_id and session_id not in self.memories:
             raise ValueError("Memory not found")
@@ -109,7 +156,7 @@ class BeeAIAgentAdvanced(Agent):
             yield Message(TextMessagePart(content=content.text))
 
 
-def test_server():
+if __name__ == "__main__":
     asyncio.run(
         serve(
             EchoAgent(),
@@ -120,16 +167,3 @@ def test_server():
             BeeAIAgentAdvanced(),
         )
     )
-
-
-# async def client():
-#     async with create_client("http://localhost:8000") as client:
-#         output = await client.run(RunInput(text="Howdy"))
-#         print(output)
-
-#         async for output in client.run_stream(RunInput(text="Howdy again")):
-#             print(output)
-
-
-# def test_client():
-#     asyncio.run(client())

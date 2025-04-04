@@ -1,9 +1,10 @@
 import asyncio
 
+from acp_sdk.server.telemetry import configure_telemetry
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
-
-import uvicorn
 
 from acp_sdk.server.agent import Agent
 from acp_sdk.models import (
@@ -26,8 +27,11 @@ from acp_sdk.server.bundle import RunBundle
 from acp_sdk.server.utils import stream_sse
 
 
-def app(*agents: Agent) -> FastAPI:
+def create_app(*agents: Agent) -> FastAPI:
     app = FastAPI(title="acp-agents")
+
+    configure_telemetry()
+    FastAPIInstrumentor.instrument_app(app)
 
     agents: dict[AgentName, Agent] = {agent.name: agent for agent in agents}
     runs: dict[RunId, RunBundle] = dict()
@@ -131,9 +135,3 @@ def app(*agents: Agent) -> FastAPI:
         )
 
     return app
-
-
-async def serve(*agents: Agent, **kwargs):
-    config = uvicorn.Config(app=app(*agents), **kwargs)
-    server = uvicorn.Server(config)
-    await server.serve()
