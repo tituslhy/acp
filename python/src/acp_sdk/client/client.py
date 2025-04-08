@@ -32,7 +32,7 @@ class Client:
 
         self._client = self._init_client(client)
 
-    def _init_client(self, client: httpx.AsyncClient | None = None) -> Self:
+    def _init_client(self, client: httpx.AsyncClient | None = None) -> httpx.AsyncClient:
         client = client or httpx.AsyncClient(base_url=self.base_url)
         HTTPXClientInstrumentor.instrument_client(client)
         return client
