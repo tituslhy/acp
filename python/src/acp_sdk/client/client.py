@@ -8,11 +8,13 @@ from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from pydantic import TypeAdapter
 
 from acp_sdk.models import (
+    ACPError,
     Agent,
     AgentName,
     AgentReadResponse,
     AgentsListResponse,
     AwaitResume,
+    Error,
     Message,
     Run,
     RunCancelResponse,
@@ -51,11 +53,13 @@ class Client:
 
     async def agents(self) -> AsyncIterator[Agent]:
         response = await self._client.get("/agents")
+        self._raise_error(response)
         for agent in AgentsListResponse.model_validate(response.json()).agents:
             yield agent
 
     async def agent(self, *, name: AgentName) -> Agent:
         response = await self._client.get(f"/agents/{name}")
+        self._raise_error(response)
         return AgentReadResponse.model_validate(response.json())
 
     async def run_sync(self, *, agent: AgentName, input: Message) -> Run:
@@ -63,6 +67,7 @@ class Client:
             "/runs",
             json=RunCreateRequest(agent_name=agent, input=input, mode=RunMode.SYNC).model_dump(),
         )
+        self._raise_error(response)
         return RunCreateResponse.model_validate(response.json())
 
     async def run_async(self, *, agent: AgentName, input: Message) -> Run:
@@ -70,6 +75,7 @@ class Client:
             "/runs",
             json=RunCreateRequest(agent_name=agent, input=input, mode=RunMode.ASYNC).model_dump(),
         )
+        self._raise_error(response)
         return RunCreateResponse.model_validate(response.json())
 
     async def run_stream(self, *, agent: AgentName, input: Message) -> AsyncIterator[RunEvent]:
@@ -84,10 +90,12 @@ class Client:
 
     async def run_status(self, *, run_id: RunId) -> Run:
         response = await self._client.get(f"/runs/{run_id}")
+        self._raise_error(response)
         return Run.model_validate(response.json())
 
     async def run_cancel(self, *, run_id: RunId) -> Run:
         response = await self._client.post(f"/runs/{run_id}/cancel")
+        self._raise_error(response)
         return RunCancelResponse.model_validate(response.json())
 
     async def run_resume_sync(self, *, run_id: RunId, await_: AwaitResume) -> Run:
@@ -95,6 +103,7 @@ class Client:
             f"/runs/{run_id}",
             json=RunResumeRequest(await_=await_, mode=RunMode.SYNC).model_dump(),
         )
+        self._raise_error(response)
         return RunResumeResponse.model_validate(response.json())
 
     async def run_resume_async(self, *, run_id: RunId, await_: AwaitResume) -> Run:
@@ -102,6 +111,7 @@ class Client:
             f"/runs/{run_id}",
             json=RunResumeRequest(await_=await_, mode=RunMode.ASYNC).model_dump(),
         )
+        self._raise_error(response)
         return RunResumeResponse.model_validate(response.json())
 
     async def run_resume_stream(self, *, run_id: RunId, await_: AwaitResume) -> AsyncIterator[RunEvent]:
@@ -121,3 +131,9 @@ class Client:
         async for event in event_source.aiter_sse():
             event = TypeAdapter(RunEvent).validate_json(event.data)
             yield event
+
+    def _raise_error(self, response: httpx.Response) -> None:
+        try:
+            response.raise_for_status()
+        except httpx.HTTPError:
+            raise ACPError(Error.model_validate(response.json()))

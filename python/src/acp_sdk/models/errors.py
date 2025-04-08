@@ -18,3 +18,6 @@ class ACPError(Exception):
     def __init__(self, error: Error) -> None:
         super().__init__()
         self.error = error
+
+    def __str__(self) -> str:
+        return str(self.error.message)
