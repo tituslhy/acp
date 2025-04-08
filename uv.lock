@@ -15,7 +15,7 @@ dev = [
 
 [[package]]
 name = "acp-sdk"
-version = "1.0.0rc1"
+version = "1.0.0rc2"
 source = { editable = "python" }
 dependencies = [
     { name = "opentelemetry-api" },
