@@ -20,3 +20,4 @@ Alpha implementation in BeeAI:
 ## references
 
 - Github discussion: https://github.com/orgs/i-am-bee/discussions/284
+- Discord discussions: https://discord.com/channels/1309202615556378705/1354934420955598869
