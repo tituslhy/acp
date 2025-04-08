@@ -6,7 +6,6 @@ from opentelemetry import trace
 from pydantic import ValidationError
 
 from acp_sdk.models import (
-    ACPError,
     AnyModel,
     Await,
     AwaitEvent,
@@ -14,6 +13,7 @@ from acp_sdk.models import (
     CancelledEvent,
     CompletedEvent,
     CreatedEvent,
+    Error,
     FailedEvent,
     GenericEvent,
     InProgressEvent,
@@ -122,7 +122,7 @@ class RunBundle:
                 await self.emit(CancelledEvent(run=self.run))
                 run_logger.info("Run cancelled")
             except Exception as e:
-                self.run.error = ACPError(code="unspecified", message=str(e))
+                self.run.error = Error(code="unspecified", message=str(e))
                 self.run.status = RunStatus.FAILED
                 await self.emit(FailedEvent(run=self.run))
                 run_logger.exception("Run failed")

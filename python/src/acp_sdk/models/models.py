@@ -5,10 +5,7 @@ from typing import Any, Literal, Union
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, RootModel
 
-
-class ACPError(BaseModel):
-    code: str
-    message: str
+from acp_sdk.models.errors import Error
 
 
 class AnyModel(BaseModel):
@@ -97,7 +94,7 @@ class Run(BaseModel):
     status: RunStatus = RunStatus.CREATED
     await_: Await | None = Field(None, alias="await")
     output: Message | None = None
-    error: ACPError | None = None
+    error: Error | None = None
 
     model_config = ConfigDict(populate_by_name=True)
 
