@@ -1,6 +1,7 @@
-from enum import Enum
-from typing import Annotated, Literal, Union
 import uuid
+from collections.abc import Iterator
+from enum import Enum
+from typing import Any, Literal, Union
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, RootModel
 
@@ -40,24 +41,19 @@ MessagePart = Union[TextMessagePart, ImageMessagePart, ArtifactMessagePart]
 class Message(RootModel):
     root: list[MessagePart]
 
-    def __init__(self, *items: MessagePart):
+    def __init__(self, *items: MessagePart) -> None:
         super().__init__(root=list(items))
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[MessagePart]:
         return iter(self.root)
-
-    def __getitem__(self, item):
-        return self.root[item]
 
     def __add__(self, other: "Message") -> "Message":
         if not isinstance(other, Message):
             raise TypeError(f"Cannot concatenate Message with {type(other).__name__}")
         return Message(*(self.root + other.root))
 
-    def __str__(self):
-        return "".join(
-            str(part) for part in self.root if isinstance(part, TextMessagePart)
-        )
+    def __str__(self) -> str:
+        return "".join(str(part) for part in self.root if isinstance(part, TextMessagePart))
 
 
 AgentName = str
@@ -107,8 +103,8 @@ class Run(BaseModel):
 
     def model_dump_json(
         self,
-        **kwargs,
-    ):
+        **kwargs: dict[str, Any],
+    ) -> str:
         return super().model_dump_json(
             by_alias=True,
             **kwargs,
@@ -128,8 +124,8 @@ class AwaitEvent(BaseModel):
 
     def model_dump_json(
         self,
-        **kwargs,
-    ):
+        **kwargs: dict[str, Any],
+    ) -> str:
         return super().model_dump_json(
             by_alias=True,
             **kwargs,

@@ -1,22 +1,23 @@
 import logging
 from importlib.metadata import version
+from typing import Any
 
 from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import (
-    Resource,
     SERVICE_NAME,
     SERVICE_NAMESPACE,
     SERVICE_VERSION,
+    Resource,
 )
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExportResult
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
 logger = logging.getLogger("uvicorn.error")
 
 
 class SilentOTLPSpanExporter(OTLPSpanExporter):
-    def export(self, spans):
+    def export(self, spans: Any) -> SpanExportResult:
         try:
             return super().export(spans)
         except Exception as e:
@@ -24,7 +25,7 @@ class SilentOTLPSpanExporter(OTLPSpanExporter):
             return SpanExportResult.FAILURE
 
 
-def configure_telemetry():
+def configure_telemetry() -> None:
     current_provider = trace.get_tracer_provider()
 
     # Detect default provider and override

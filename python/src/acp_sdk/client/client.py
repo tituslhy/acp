@@ -1,10 +1,11 @@
+from collections.abc import AsyncIterator
 from types import TracebackType
-from typing import AsyncIterator
+from typing import Self
 
 import httpx
 from httpx_sse import EventSource, aconnect_sse
-
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from pydantic import TypeAdapter
 
 from acp_sdk.models import (
     Agent,
@@ -13,9 +14,9 @@ from acp_sdk.models import (
     AgentsListResponse,
     AwaitResume,
     Message,
+    Run,
     RunCancelResponse,
     RunCreateRequest,
-    Run,
     RunCreateResponse,
     RunEvent,
     RunId,
@@ -23,23 +24,20 @@ from acp_sdk.models import (
     RunResumeRequest,
     RunResumeResponse,
 )
-from pydantic import TypeAdapter
 
 
 class Client:
-    def __init__(
-        self, *, base_url: httpx.URL | str = "", client: httpx.AsyncClient | None = None
-    ):
+    def __init__(self, *, base_url: httpx.URL | str = "", client: httpx.AsyncClient | None = None) -> None:
         self.base_url = base_url
 
         self._client = self._init_client(client)
 
-    def _init_client(self, client: httpx.AsyncClient | None = None):
+    def _init_client(self, client: httpx.AsyncClient | None = None) -> Self:
         client = client or httpx.AsyncClient(base_url=self.base_url)
         HTTPXClientInstrumentor.instrument_client(client)
         return client
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         await self._client.__aenter__()
         return self
 
@@ -48,7 +46,7 @@ class Client:
         exc_type: type[BaseException] | None = None,
         exc_value: BaseException | None = None,
         traceback: TracebackType | None = None,
-    ):
+    ) -> None:
         await self._client.__aexit__(exc_type, exc_value, traceback)
 
     async def agents(self) -> AsyncIterator[Agent]:
@@ -63,31 +61,23 @@ class Client:
     async def run_sync(self, *, agent: AgentName, input: Message) -> Run:
         response = await self._client.post(
             "/runs",
-            json=RunCreateRequest(
-                agent_name=agent, input=input, mode=RunMode.SYNC
-            ).model_dump(),
+            json=RunCreateRequest(agent_name=agent, input=input, mode=RunMode.SYNC).model_dump(),
         )
         return RunCreateResponse.model_validate(response.json())
 
     async def run_async(self, *, agent: AgentName, input: Message) -> Run:
         response = await self._client.post(
             "/runs",
-            json=RunCreateRequest(
-                agent_name=agent, input=input, mode=RunMode.ASYNC
-            ).model_dump(),
+            json=RunCreateRequest(agent_name=agent, input=input, mode=RunMode.ASYNC).model_dump(),
         )
         return RunCreateResponse.model_validate(response.json())
 
-    async def run_stream(
-        self, *, agent: AgentName, input: Message
-    ) -> AsyncIterator[RunEvent]:
+    async def run_stream(self, *, agent: AgentName, input: Message) -> AsyncIterator[RunEvent]:
         async with aconnect_sse(
             self._client,
             "POST",
             "/runs",
-            json=RunCreateRequest(
-                agent_name=agent, input=input, mode=RunMode.STREAM
-            ).model_dump(),
+            json=RunCreateRequest(agent_name=agent, input=input, mode=RunMode.STREAM).model_dump(),
         ) as event_source:
             async for event in self._validate_stream(event_source):
                 yield event
@@ -114,9 +104,7 @@ class Client:
         )
         return RunResumeResponse.model_validate(response.json())
 
-    async def run_resume_stream(
-        self, *, run_id: RunId, await_: AwaitResume
-    ) -> AsyncIterator[RunEvent]:
+    async def run_resume_stream(self, *, run_id: RunId, await_: AwaitResume) -> AsyncIterator[RunEvent]:
         async with aconnect_sse(
             self._client,
             "POST",

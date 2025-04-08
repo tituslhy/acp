@@ -1,17 +1,16 @@
 import asyncio
 
-from acp_sdk.server.telemetry import configure_telemetry
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-from acp_sdk.server.agent import Agent
+from acp_sdk.models import (
+    Agent as AgentModel,
+)
 from acp_sdk.models import (
     AgentName,
-    Agent as AgentModel,
-    AgentsListResponse,
     AgentReadResponse,
+    AgentsListResponse,
     Run,
     RunCancelResponse,
     RunCreateRequest,
@@ -23,7 +22,9 @@ from acp_sdk.models import (
     RunResumeResponse,
     RunStatus,
 )
+from acp_sdk.server.agent import Agent
 from acp_sdk.server.bundle import RunBundle
+from acp_sdk.server.telemetry import configure_telemetry
 from acp_sdk.server.utils import stream_sse
 
 
@@ -34,36 +35,33 @@ def create_app(*agents: Agent) -> FastAPI:
     FastAPIInstrumentor.instrument_app(app)
 
     agents: dict[AgentName, Agent] = {agent.name: agent for agent in agents}
-    runs: dict[RunId, RunBundle] = dict()
+    runs: dict[RunId, RunBundle] = {}
 
-    def find_run_bundle(run_id: RunId):
-        bundle = runs.get(run_id, None)
+    def find_run_bundle(run_id: RunId) -> RunBundle:
+        bundle = runs.get(run_id)
         if not bundle:
             raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
         return bundle
 
-    def find_agent(agent_name: AgentName):
+    def find_agent(agent_name: AgentName) -> Agent:
         agent = agents.get(agent_name, None)
         if not agent:
             raise HTTPException(status_code=404, detail=f"Agent {agent_name} not found")
         return agent
 
     @app.get("/agents")
-    async def list() -> AgentsListResponse:
+    async def list_agents() -> AgentsListResponse:
         return AgentsListResponse(
-            agents=[
-                AgentModel(name=agent.name, description=agent.description)
-                for agent in agents.values()
-            ]
+            agents=[AgentModel(name=agent.name, description=agent.description) for agent in agents.values()]
         )
 
     @app.get("/agents/{name}")
-    async def read(name: AgentName) -> AgentReadResponse:
+    async def read_agent(name: AgentName) -> AgentReadResponse:
         agent = find_agent(name)
         return AgentModel(name=agent.name, description=agent.description)
 
     @app.post("/runs")
-    async def create(request: RunCreateRequest) -> RunCreateResponse:
+    async def create_run(request: RunCreateRequest) -> RunCreateResponse:
         agent = find_agent(request.agent_name)
         bundle = RunBundle(
             agent=agent,
@@ -94,12 +92,12 @@ def create_app(*agents: Agent) -> FastAPI:
                 raise NotImplementedError()
 
     @app.get("/runs/{run_id}")
-    async def read(run_id: RunId) -> RunReadResponse:
+    async def read_run(run_id: RunId) -> RunReadResponse:
         bundle = find_run_bundle(run_id)
         return bundle.run
 
     @app.post("/runs/{run_id}")
-    async def resume(run_id: RunId, request: RunResumeRequest) -> RunResumeResponse:
+    async def resume_run(run_id: RunId, request: RunResumeRequest) -> RunResumeResponse:
         bundle = find_run_bundle(run_id)
         bundle.stream_queue = asyncio.Queue()  # TODO improve
         await bundle.await_queue.put(request.await_)
@@ -121,7 +119,7 @@ def create_app(*agents: Agent) -> FastAPI:
                 raise NotImplementedError()
 
     @app.post("/runs/{run_id}/cancel")
-    async def cancel(run_id: RunId) -> RunCancelResponse:
+    async def cancel_run(run_id: RunId) -> RunCancelResponse:
         bundle = find_run_bundle(run_id)
         if bundle.run.status.is_terminal:
             raise HTTPException(
@@ -130,8 +128,6 @@ def create_app(*agents: Agent) -> FastAPI:
             )
         bundle.task.cancel()
         bundle.run.status = RunStatus.CANCELLING
-        return JSONResponse(
-            status_code=status.HTTP_202_ACCEPTED, content=bundle.run.model_dump()
-        )
+        return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=bundle.run.model_dump())
 
     return app

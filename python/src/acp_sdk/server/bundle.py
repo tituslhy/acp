@@ -1,15 +1,16 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 
 from opentelemetry import trace
 from pydantic import ValidationError
 
-from acp_sdk.server.agent import Agent
 from acp_sdk.models import (
     ACPError,
     AnyModel,
     Await,
     AwaitEvent,
+    AwaitResume,
     CancelledEvent,
     CompletedEvent,
     CreatedEvent,
@@ -19,17 +20,17 @@ from acp_sdk.models import (
     Message,
     MessageEvent,
     Run,
-    AwaitResume,
     RunEvent,
     RunStatus,
 )
+from acp_sdk.server.agent import Agent
 from acp_sdk.server.context import Context
 
 logger = logging.getLogger("uvicorn.error")
 
 
 class RunBundle:
-    def __init__(self, *, agent: Agent, run: Run, task: asyncio.Task | None = None):
+    def __init__(self, *, agent: Agent, run: Run, task: asyncio.Task | None = None) -> None:
         self.agent = agent
         self.run = run
         self.task = task
@@ -40,7 +41,7 @@ class RunBundle:
         self.await_queue: asyncio.Queue[AwaitResume] = asyncio.Queue(maxsize=1)
         self.await_or_terminate_event = asyncio.Event()
 
-    async def stream(self):
+    async def stream(self) -> AsyncGenerator[RunEvent]:
         while True:
             event = await self.stream_queue.get()
             if event is None:
@@ -48,7 +49,7 @@ class RunBundle:
             yield event
             self.stream_queue.task_done()
 
-    async def emit(self, event: RunEvent):
+    async def emit(self, event: RunEvent) -> None:
         await self.stream_queue.put(event)
 
     async def await_(self) -> AwaitResume:
@@ -60,14 +61,14 @@ class RunBundle:
         self.await_queue.task_done()
         return resume
 
-    async def resume(self, resume: AwaitResume):
+    async def resume(self, resume: AwaitResume) -> None:
         self.stream_queue = asyncio.Queue()
         await self.await_queue.put(resume)
 
-    async def join(self):
+    async def join(self) -> None:
         await self.await_or_terminate_event.wait()
 
-    async def execute(self, input: Message):
+    async def execute(self, input: Message) -> None:
         with trace.get_tracer(__name__).start_as_current_span("execute"):
             run_logger = logging.LoggerAdapter(logger, {"run_id": self.run.run_id})
 
@@ -76,9 +77,7 @@ class RunBundle:
                 self.run.session_id = await self.agent.session(self.run.session_id)
                 run_logger.info("Session loaded")
 
-                generator = self.agent.run(
-                    input=input, context=Context(session_id=self.run.session_id)
-                )
+                generator = self.agent.run(input=input, context=Context(session_id=self.run.session_id))
                 run_logger.info("Run started")
 
                 self.run.status = RunStatus.IN_PROGRESS

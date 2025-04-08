@@ -1,11 +1,11 @@
 import abc
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from acp_sdk.models import (
     AgentName,
-    Message,
     Await,
     AwaitResume,
+    Message,
     SessionId,
 )
 from acp_sdk.server.context import Context
@@ -21,9 +21,7 @@ class Agent(abc.ABC):
         return ""
 
     @abc.abstractmethod
-    def run(
-        self, input: Message, *, context: Context
-    ) -> AsyncGenerator[Message | Await, AwaitResume]:
+    def run(self, input: Message, *, context: Context) -> AsyncGenerator[Message | Await, AwaitResume]:
         pass
 
     async def session(self, session_id: SessionId | None) -> SessionId | None:
