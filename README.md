@@ -2,7 +2,9 @@
 
 ## Overview
 
-ACP project looking for have a standardized interface enabling seamless interaction between AI agents across different technology stacks/frameworks. It provides a common protocol for effective agent collaboration and interoperability.
+ACP project looking for have a standardized interface enabling seamless interaction between AI agents across different technology stacks/frameworks. It provides a common protocol for effective agent collaboration and interoperability. 
+
+In this reposotory you are going to find the Documentation, Spedification and tools (SDK) to interat and use ACP.  
 
 ## Core Principles
 
