@@ -1,4 +1,4 @@
-# Agent Communication Protocol - ACP
+# Agent Communication Protocol - ACP 
 
 ## Overview
 
@@ -14,10 +14,10 @@ In this reposotory you are going to find the Documentation, Spedification and to
 
 ## Contents
 
-- [ACP Documentation](./docs/README.md)
-- [Specifications](https://docs.beeai.dev/acp/spec/concepts/overview)
+- [ACP Documentation](./docs/README.md) [Draft]
+- [Specifications](https://docs.beeai.dev/acp/spec/concepts/overview) [Draft]
+- [ACP SDK](./python/) [Alpha]
 - [Community Discussions](https://github.com/orgs/i-am-bee/discussions)
-- [ACP SDK](./python/)
 
 ## Get Involved
 
