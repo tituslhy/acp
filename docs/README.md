@@ -9,7 +9,7 @@ Alpha implementation in BeeAI:
 
 ## Key Discussion
 
-- [Architecture & Core Protocol Design](./Architecture_&_Core_Protocol_Design.md)
+- [Architecture & Core Protocol Design](./Architecture&Core_Protocol_Design.md)
 - [Deployment & Infrastructure](./Deployment&Infrastructure.md)
 - [Data Security & Privacy](./Data_Security&Privacy.md)
 - [Protocol Implementation & Encoding](./Protocol_Implementation&Encoding.md)
