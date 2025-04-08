@@ -1,3 +1,4 @@
+import asyncio
 from acp_sdk.models import (
     Message,
 )
@@ -16,7 +17,10 @@ class EchoAgent(Agent):
         return "Echoes everything"
 
     async def run(self, input: Message, *, context: Context):
-        yield input
+        for part in input:
+            await asyncio.sleep(0.5)
+            yield {"thought": "I should echo everyting"}
+            yield Message(part)
 
 
 app = create_app(EchoAgent())

@@ -41,19 +41,18 @@ class RunBundle:
         self.await_or_terminate_event = asyncio.Event()
 
     async def stream(self):
-        try:
-            while True:
-                event = await self.stream_queue.get()
-                yield event
-                self.stream_queue.task_done()
-        except asyncio.QueueShutDown:
-            pass
+        while True:
+            event = await self.stream_queue.get()
+            if event is None:
+                break
+            yield event
+            self.stream_queue.task_done()
 
     async def emit(self, event: RunEvent):
         await self.stream_queue.put(event)
 
     async def await_(self) -> AwaitResume:
-        self.stream_queue.shutdown()
+        await self.stream_queue.put(None)
         self.await_queue.empty()
         self.await_or_terminate_event.set()
         self.await_or_terminate_event.clear()
@@ -130,4 +129,4 @@ class RunBundle:
                 run_logger.exception("Run failed")
             finally:
                 self.await_or_terminate_event.set()
-                self.stream_queue.shutdown()
+                await self.stream_queue.put(None)
