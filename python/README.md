@@ -12,16 +12,14 @@ Install using pip:
 pip install acp-sdk
 ```
 
-## Example
+## Examples
 
 The SDK can be used to implement both clients and servers.
 
 ### Server
 
-To run an example server use [FastAPI CLI](https://fastapi.tiangolo.com/fastapi-cli/) or other [deployment strategies](https://fastapi.tiangolo.com/deployment/):
-
 ```shell
-fastapi dev examples/servers/echo.py
+python examples/servers/echo.py
 ```
 
 ### Client

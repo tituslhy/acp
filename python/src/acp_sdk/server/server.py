@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -33,14 +34,14 @@ from acp_sdk.server.errors import (
     http_exception_handler,
     validation_exception_handler,
 )
-from acp_sdk.server.telemetry import configure_telemetry
+from acp_sdk.server.logging import configure_logger as configure_logger_func
+from acp_sdk.server.telemetry import configure_telemetry as configure_telemetry_func
 from acp_sdk.server.utils import stream_sse
 
 
 def create_app(*agents: Agent) -> FastAPI:
     app = FastAPI(title="acp-agents")
 
-    configure_telemetry()
     FastAPIInstrumentor.instrument_app(app)
 
     agents: dict[AgentName, Agent] = {agent.name: agent for agent in agents}
@@ -145,3 +146,16 @@ def create_app(*agents: Agent) -> FastAPI:
         return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=bundle.run.model_dump())
 
     return app
+
+
+def serve(
+    *agents: Agent, configure_logger: bool = True, configure_telemetry: bool = False, **kwargs: dict[str, Any]
+) -> None:
+    import uvicorn
+
+    if configure_logger:
+        configure_logger_func()
+    if configure_telemetry:
+        configure_telemetry_func()
+
+    uvicorn.run(create_app(*agents), **kwargs)

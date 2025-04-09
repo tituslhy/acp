@@ -25,21 +25,17 @@ class SilentOTLPSpanExporter(OTLPSpanExporter):
 
 
 def configure_telemetry() -> None:
-    current_provider = trace.get_tracer_provider()
+    """Utility that configures opentelemetry with OTLP exporter"""
 
-    # Detect default provider and override
-    if isinstance(current_provider, trace.ProxyTracerProvider):
-        provider = TracerProvider(
-            resource=Resource(
-                attributes={
-                    SERVICE_NAME: "acp-server",
-                    SERVICE_NAMESPACE: "acp",
-                    SERVICE_VERSION: version("acp-sdk"),
-                }
-            )
+    provider = TracerProvider(
+        resource=Resource(
+            attributes={
+                SERVICE_NAME: "acp-server",
+                SERVICE_NAMESPACE: "acp",
+                SERVICE_VERSION: version("acp-sdk"),
+            }
         )
-
-        processor = BatchSpanProcessor(SilentOTLPSpanExporter())
-        provider.add_span_processor(processor)
-
-        trace.set_tracer_provider(provider)
+    )
+    processor = BatchSpanProcessor(SilentOTLPSpanExporter())
+    provider.add_span_processor(processor)
+    trace.set_tracer_provider(provider)
