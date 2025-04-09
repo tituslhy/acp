@@ -1,4 +1,3 @@
-import logging
 from importlib.metadata import version
 from typing import Any
 
@@ -13,7 +12,7 @@ from opentelemetry.sdk.resources import (
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExportResult
 
-logger = logging.getLogger("uvicorn.error")
+from acp_sdk.server.logging import logger
 
 
 class SilentOTLPSpanExporter(OTLPSpanExporter):
