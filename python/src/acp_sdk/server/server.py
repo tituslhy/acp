@@ -33,15 +33,13 @@ from acp_sdk.server.errors import (
     http_exception_handler,
     validation_exception_handler,
 )
-from acp_sdk.server.logging import configure_logger
 from acp_sdk.server.telemetry import configure_telemetry
 from acp_sdk.server.utils import stream_sse
 
 
-def create_app(*agents: Agent, log_level: int | None = None) -> FastAPI:
+def create_app(*agents: Agent) -> FastAPI:
     app = FastAPI(title="acp-agents")
 
-    configure_logger(log_level=log_level)
     configure_telemetry()
     FastAPIInstrumentor.instrument_app(app)
 
