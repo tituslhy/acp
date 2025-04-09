@@ -8,6 +8,10 @@ from pydantic import AnyUrl, BaseModel, ConfigDict, Field, RootModel
 from acp_sdk.models.errors import Error
 
 
+class Metadata(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+
 class AnyModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -202,6 +206,7 @@ class RunCancelResponse(Run):
 class Agent(BaseModel):
     name: str
     description: str | None = None
+    metadata: Metadata = Metadata()
 
 
 class AgentsListResponse(BaseModel):

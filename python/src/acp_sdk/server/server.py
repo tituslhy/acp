@@ -67,13 +67,16 @@ def create_app(*agents: Agent) -> FastAPI:
     @app.get("/agents")
     async def list_agents() -> AgentsListResponse:
         return AgentsListResponse(
-            agents=[AgentModel(name=agent.name, description=agent.description) for agent in agents.values()]
+            agents=[
+                AgentModel(name=agent.name, description=agent.description, metadata=agent.metadata)
+                for agent in agents.values()
+            ]
         )
 
     @app.get("/agents/{name}")
     async def read_agent(name: AgentName) -> AgentReadResponse:
         agent = find_agent(name)
-        return AgentModel(name=agent.name, description=agent.description)
+        return AgentModel(name=agent.name, description=agent.description, metadata=agent.metadata)
 
     @app.post("/runs")
     async def create_run(request: RunCreateRequest) -> RunCreateResponse:
