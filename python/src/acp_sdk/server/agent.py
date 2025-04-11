@@ -1,6 +1,6 @@
 import abc
 import asyncio
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 from concurrent.futures import ThreadPoolExecutor
 
 import janus
@@ -42,7 +42,9 @@ class Agent(abc.ABC):
 
 class SyncAgent(Agent):
     @abc.abstractmethod
-    def run_sync(self, input: Message, context: SyncContext, executor: ThreadPoolExecutor) -> RunYield | None:
+    def run_sync(
+        self, input: Message, context: SyncContext, executor: ThreadPoolExecutor
+    ) -> Generator[RunYield, RunYieldResume]:
         pass
 
     async def run(
@@ -53,7 +55,7 @@ class SyncAgent(Agent):
 
         run_future = asyncio.get_running_loop().run_in_executor(
             executor,
-            self.run_sync,
+            self._run_generator,
             input,
             SyncContext(
                 session_id=context.session_id,
@@ -70,5 +72,13 @@ class SyncAgent(Agent):
                 resume = yield await yield_task
                 await yield_resume_queue.async_q.put(resume)
             if run_future in done:
-                yield await run_future
                 break
+
+    def _run_generator(self, input: Message, context: SyncContext, executor: ThreadPoolExecutor) -> None:
+        gen = self.run_sync(input, context, executor)
+        try:
+            resume = None
+            while True:
+                resume = context.yield_(gen.send(resume))
+        except StopIteration:
+            pass
