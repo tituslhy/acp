@@ -56,4 +56,4 @@ class EchoAgent(Agent):
 server.register(EchoAgent())
 
 
-server.run()
+server()

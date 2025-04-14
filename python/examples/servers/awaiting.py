@@ -20,4 +20,4 @@ async def awaiting(input: Message, context: Context) -> AsyncGenerator[Message |
     yield Message(TextMessagePart(content=f"Thanks for {data}"))
 
 
-server.run()
+server()

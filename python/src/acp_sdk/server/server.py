@@ -109,7 +109,9 @@ class Server:
     def register(self, *agents: Agent) -> None:
         self.agents.extend(agents)
 
-    def run(self, configure_logger: bool = True, configure_telemetry: bool = False, **kwargs: dict[str, Any]) -> None:
+    def __call__(
+        self, configure_logger: bool = True, configure_telemetry: bool = False, **kwargs: dict[str, Any]
+    ) -> None:
         import uvicorn
 
         if configure_logger:

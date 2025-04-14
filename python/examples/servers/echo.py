@@ -19,4 +19,4 @@ async def echo(input: Message, context: Context) -> AsyncGenerator[RunYield, Run
         yield Message(part)
 
 
-server.run()
+server()
