@@ -1,6 +1,6 @@
 [project]
 name = "acp-sdk"
-version = "1.0.0rc4"
+version = "0.1.0rc5"
 description = "Agent Communication Protocol SDK"
 readme = "README.md"
 authors = []
