@@ -37,23 +37,19 @@ async with Client(base_url="http://localhost:8000") as client:
 The `server` submodule exposes [fastapi] application factory that makes it easy to expose any agent over ACP.
 
 ```python
-class EchoAgent(Agent):
-    @property
-    def name(self) -> str:
-        return "echo"
+server = Server()
 
-    @property
-    def description(self) -> str:
-        return "Echoes everything"
-
-    async def run(self, input: Message, *, context: Context) -> AsyncGenerator[Message | Await, AwaitResume]:
-        for part in input:
-            await asyncio.sleep(0.5)
-            yield {"thought": "I should echo everyting"}
-            yield Message(part)
+@server.agent()
+async def echo(input: Message, context: Context) -> AsyncGenerator[RunYield, RunYieldResume]:
+    """Echoes everything"""
+    for part in input:
+        await asyncio.sleep(0.5)
+        yield {"thought": "I should echo everyting"}
+        await asyncio.sleep(0.5)
+        yield Message(part)
 
 
-serve(EchoAgent())
+server.run()
 ```
 
 ➡️ Explore more in our [examples library](/python/examples).
