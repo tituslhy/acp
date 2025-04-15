@@ -30,7 +30,7 @@ def server() -> Generator[None]:
 
     time.sleep(1)
 
-    yield
+    yield server
 
     server.should_exit = True
     thread.join(timeout=2)
