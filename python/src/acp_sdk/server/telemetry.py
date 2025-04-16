@@ -1,5 +1,4 @@
 import logging
-from importlib.metadata import version
 
 from opentelemetry import metrics, trace
 from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
