@@ -22,6 +22,10 @@ def server() -> Generator[None]:
         yield Await()
         yield Message(TextMessagePart(content="empty"))
 
+    @server.agent()
+    async def failer(input: Message, context: Context) -> AsyncIterator[Message]:
+        raise RuntimeError("Whoops")
+
     thread = Thread(target=server.run, kwargs={"port": Config.PORT}, daemon=True)
     thread.start()
 

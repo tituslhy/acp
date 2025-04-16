@@ -18,6 +18,8 @@ from opentelemetry.sdk.resources import (
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+from acp_sdk.version import __version__
+
 root_logger = logging.getLogger()
 
 
@@ -28,7 +30,7 @@ def configure_telemetry() -> None:
         attributes={
             SERVICE_NAME: "acp-server",
             SERVICE_NAMESPACE: "acp",
-            SERVICE_VERSION: version("acp-sdk"),
+            SERVICE_VERSION: __version__,
         }
     )
 
@@ -50,3 +52,7 @@ def configure_telemetry() -> None:
     processor = BatchLogRecordProcessor(OTLPLogExporter())
     logger_provider.add_log_record_processor(processor)
     root_logger.addHandler(LoggingHandler(logger_provider=logger_provider))
+
+
+def get_tracer() -> trace.Tracer:
+    return trace.get_tracer("acp-sdk", __version__)

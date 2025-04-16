@@ -3,7 +3,6 @@ import logging
 from collections.abc import AsyncGenerator
 from concurrent.futures import ThreadPoolExecutor
 
-from opentelemetry import trace
 from pydantic import ValidationError
 
 from acp_sdk.models import (
@@ -27,19 +26,22 @@ from acp_sdk.models import (
 from acp_sdk.models.errors import ErrorCode
 from acp_sdk.server.agent import Agent
 from acp_sdk.server.logging import logger
+from acp_sdk.server.telemetry import get_tracer
 
 
 class RunBundle:
-    def __init__(self, *, agent: Agent, run: Run, task: asyncio.Task | None = None) -> None:
+    def __init__(self, *, agent: Agent, run: Run, input: Message, executor: ThreadPoolExecutor) -> None:
         self.agent = agent
         self.run = run
-        self.task = task
+        self.input = input
 
         self.stream_queue: asyncio.Queue[RunEvent] = asyncio.Queue()
         self.composed_message = Message()
 
         self.await_queue: asyncio.Queue[AwaitResume] = asyncio.Queue(maxsize=1)
         self.await_or_terminate_event = asyncio.Event()
+
+        self.task = asyncio.create_task(self._execute(input, executor=executor))
 
     async def stream(self) -> AsyncGenerator[RunEvent]:
         while True:
@@ -64,16 +66,24 @@ class RunBundle:
     async def resume(self, resume: AwaitResume) -> None:
         self.stream_queue = asyncio.Queue()
         await self.await_queue.put(resume)
+        self.run.status = RunStatus.IN_PROGRESS
+        self.run.await_ = None
+
+    async def cancel(self) -> None:
+        self.task.cancel()
+        self.run.status = RunStatus.CANCELLING
+        self.run.await_ = None
 
     async def join(self) -> None:
         await self.await_or_terminate_event.wait()
 
-    async def execute(self, input: Message, *, executor: ThreadPoolExecutor) -> None:
-        with trace.get_tracer(__name__).start_as_current_span("execute"):
+    async def _execute(self, input: Message, *, executor: ThreadPoolExecutor) -> None:
+        with get_tracer().start_as_current_span("run"):
             run_logger = logging.LoggerAdapter(logger, {"run_id": str(self.run.run_id)})
 
-            await self.emit(CreatedEvent(run=self.run))
             try:
+                await self.emit(CreatedEvent(run=self.run))
+
                 self.run.session_id = await self.agent.session(self.run.session_id)
                 run_logger.info("Session loaded")
 
@@ -103,7 +113,6 @@ class RunBundle:
                         )
                         run_logger.info("Run awaited")
                         await_resume = await self.await_()
-                        self.run.status = RunStatus.IN_PROGRESS
                         await self.emit(InProgressEvent(run=self.run))
                         run_logger.info("Run resumed")
                     else:
@@ -126,6 +135,7 @@ class RunBundle:
                 self.run.status = RunStatus.FAILED
                 await self.emit(FailedEvent(run=self.run))
                 run_logger.exception("Run failed")
+                raise
             finally:
                 self.await_or_terminate_event.set()
                 await self.stream_queue.put(None)

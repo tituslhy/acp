@@ -37,6 +37,20 @@ async def test_run_status(server: Server, client: Client) -> None:
 
 
 @pytest.mark.asyncio
+async def test_failure(server: Server, client: Client) -> None:
+    run = await client.run_sync(agent="failer", input=input)
+    assert run.status == RunStatus.FAILED
+
+
+@pytest.mark.asyncio
+async def test_run_cancel(server: Server, client: Client) -> None:
+    run = await client.run_sync(agent="awaiter", input=input)
+    assert run.status == RunStatus.AWAITING
+    run = await client.run_cancel(run_id=run.run_id)
+    assert run.status == RunStatus.CANCELLING
+
+
+@pytest.mark.asyncio
 async def test_run_resume_sync(server: Server, client: Client) -> None:
     run = await client.run_sync(agent="awaiter", input=input)
     assert run.status == RunStatus.AWAITING
@@ -54,7 +68,7 @@ async def test_run_resume_async(server: Server, client: Client) -> None:
     assert run.await_ is not None
 
     run = await client.run_resume_async(run_id=run.run_id, await_=AwaitResume())
-    assert run.status == RunStatus.AWAITING
+    assert run.status == RunStatus.IN_PROGRESS
 
 
 @pytest.mark.asyncio

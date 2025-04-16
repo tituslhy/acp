@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import AsyncGenerator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
@@ -25,7 +24,6 @@ from acp_sdk.models import (
     RunReadResponse,
     RunResumeRequest,
     RunResumeResponse,
-    RunStatus,
 )
 from acp_sdk.models.errors import ACPError
 from acp_sdk.server.agent import Agent
@@ -51,7 +49,7 @@ def create_app(*agents: Agent) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         nonlocal executor
-        with ThreadPoolExecutor(max_workers=5) as exec:
+        with ThreadPoolExecutor() as exec:
             executor = exec
             yield
 
@@ -96,16 +94,14 @@ def create_app(*agents: Agent) -> FastAPI:
     @app.post("/runs")
     async def create_run(request: RunCreateRequest) -> RunCreateResponse:
         agent = find_agent(request.agent_name)
-        bundle = RunBundle(
-            agent=agent,
-            run=Run(
-                agent_name=agent.name,
-                session_id=request.session_id,
-            ),
-        )
 
         nonlocal executor
-        bundle.task = asyncio.create_task(bundle.execute(request.input, executor=executor))
+        bundle = RunBundle(
+            agent=agent,
+            run=Run(agent_name=agent.name, session_id=request.session_id),
+            input=request.input,
+            executor=executor,
+        )
         runs[bundle.run.run_id] = bundle
 
         headers = {Headers.RUN_ID: str(bundle.run.run_id)}
@@ -140,8 +136,7 @@ def create_app(*agents: Agent) -> FastAPI:
     @app.post("/runs/{run_id}")
     async def resume_run(run_id: RunId, request: RunResumeRequest) -> RunResumeResponse:
         bundle = find_run_bundle(run_id)
-        bundle.stream_queue = asyncio.Queue()  # TODO improve
-        await bundle.await_queue.put(request.await_)
+        await bundle.resume(request.await_)
         match request.mode:
             case RunMode.STREAM:
                 return StreamingResponse(
@@ -164,11 +159,10 @@ def create_app(*agents: Agent) -> FastAPI:
         bundle = find_run_bundle(run_id)
         if bundle.run.status.is_terminal:
             raise HTTPException(
-                status_code=403,
-                detail=f"Run with terminal status {bundle.run.status} can't be cancelled",
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Run in terminal status {bundle.run.status} can't be cancelled",
             )
-        bundle.task.cancel()
-        bundle.run.status = RunStatus.CANCELLING
+        await bundle.cancel()
         return JSONResponse(status_code=status.HTTP_202_ACCEPTED, content=jsonable_encoder(bundle.run))
 
     return app
