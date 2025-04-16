@@ -7,6 +7,8 @@ from pydantic import ValidationError
 
 from acp_sdk.models import (
     AnyModel,
+    Artifact,
+    ArtifactEvent,
     Await,
     AwaitEvent,
     AwaitResume,
@@ -30,18 +32,17 @@ from acp_sdk.server.telemetry import get_tracer
 
 
 class RunBundle:
-    def __init__(self, *, agent: Agent, run: Run, input: Message, executor: ThreadPoolExecutor) -> None:
+    def __init__(self, *, agent: Agent, run: Run, inputs: list[Message], executor: ThreadPoolExecutor) -> None:
         self.agent = agent
         self.run = run
-        self.input = input
+        self.inputs = inputs
 
         self.stream_queue: asyncio.Queue[RunEvent] = asyncio.Queue()
-        self.composed_message = Message()
 
         self.await_queue: asyncio.Queue[AwaitResume] = asyncio.Queue(maxsize=1)
         self.await_or_terminate_event = asyncio.Event()
 
-        self.task = asyncio.create_task(self._execute(input, executor=executor))
+        self.task = asyncio.create_task(self._execute(inputs, executor=executor))
 
     async def stream(self) -> AsyncGenerator[RunEvent]:
         while True:
@@ -77,14 +78,14 @@ class RunBundle:
     async def join(self) -> None:
         await self.await_or_terminate_event.wait()
 
-    async def _execute(self, input: Message, *, executor: ThreadPoolExecutor) -> None:
+    async def _execute(self, inputs: list[Message], *, executor: ThreadPoolExecutor) -> None:
         with get_tracer().start_as_current_span("run"):
             run_logger = logging.LoggerAdapter(logger, {"run_id": str(self.run.run_id)})
 
             try:
                 await self.emit(CreatedEvent(run=self.run))
 
-                generator = self.agent.execute(input=input, session_id=self.run.session_id, executor=executor)
+                generator = self.agent.execute(inputs=inputs, session_id=self.run.session_id, executor=executor)
                 run_logger.info("Run started")
 
                 self.run.status = RunStatus.IN_PROGRESS
@@ -94,8 +95,11 @@ class RunBundle:
                 while True:
                     next = await generator.asend(await_resume)
                     if isinstance(next, Message):
-                        self.composed_message += next
+                        self.run.outputs.append(next)
                         await self.emit(MessageEvent(message=next))
+                    elif isinstance(next, Artifact):
+                        self.run.artifacts.append(next)
+                        await self.emit(ArtifactEvent(artifact=next))
                     elif isinstance(next, Await):
                         self.run.await_ = next
                         self.run.status = RunStatus.AWAITING
@@ -119,7 +123,6 @@ class RunBundle:
                         except ValidationError:
                             raise TypeError("Invalid yield")
             except StopAsyncIteration:
-                self.run.output = self.composed_message
                 self.run.status = RunStatus.COMPLETED
                 await self.emit(CompletedEvent(run=self.run))
                 run_logger.info("Run completed")
