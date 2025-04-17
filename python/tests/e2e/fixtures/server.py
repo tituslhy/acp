@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator, AsyncIterator, Generator
 from threading import Thread
 
 import pytest
-from acp_sdk.models import ACPError, Artifact, AwaitRequest, AwaitResume, Error, ErrorCode, Message, MessagePart
+from acp_sdk.models import Artifact, AwaitRequest, AwaitResume, Error, ErrorCode, Message, MessagePart
 from acp_sdk.server import Context, Server
 
 from e2e.config import Config
