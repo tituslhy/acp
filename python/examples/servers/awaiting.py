@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 from typing import Any
 
 from acp_sdk.models import (
-    Await,
+    AwaitRequest,
     AwaitResume,
     Message,
     MessagePart,
@@ -13,10 +13,12 @@ server = Server()
 
 
 @server.agent()
-async def awaiting(inputs: list[Message], context: Context) -> AsyncGenerator[Message | Await | Any, AwaitResume]:
+async def awaiting(
+    inputs: list[Message], context: Context
+) -> AsyncGenerator[Message | AwaitRequest | Any, AwaitResume]:
     """Greets and awaits for more data"""
     yield Message(parts=[MessagePart(content="Hello!", content_type="text/plain")])
-    data = yield Await()
+    data = yield AwaitRequest()
     yield Message(parts=[MessagePart(content=f"Thanks for {data}", content_type="text/plain")])
 
 

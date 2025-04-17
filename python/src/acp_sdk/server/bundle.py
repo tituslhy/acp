@@ -9,8 +9,8 @@ from acp_sdk.models import (
     AnyModel,
     Artifact,
     ArtifactEvent,
-    Await,
     AwaitEvent,
+    AwaitRequest,
     AwaitResume,
     CancelledEvent,
     CompletedEvent,
@@ -71,12 +71,12 @@ class RunBundle:
         self.stream_queue = asyncio.Queue()
         await self.await_queue.put(resume)
         self.run.status = RunStatus.IN_PROGRESS
-        self.run.await_ = None
+        self.run.await_request = None
 
     async def cancel(self) -> None:
         self.task.cancel()
         self.run.status = RunStatus.CANCELLING
-        self.run.await_ = None
+        self.run.await_request = None
 
     async def join(self) -> None:
         await self.await_or_terminate_event.wait()
@@ -105,8 +105,8 @@ class RunBundle:
                     elif isinstance(next, Artifact):
                         self.run.artifacts.append(next)
                         await self.emit(ArtifactEvent(artifact=next))
-                    elif isinstance(next, Await):
-                        self.run.await_ = next
+                    elif isinstance(next, AwaitRequest):
+                        self.run.await_request = next
                         self.run.status = RunStatus.AWAITING
                         await self.emit(
                             AwaitEvent.model_validate(

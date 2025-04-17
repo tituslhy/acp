@@ -71,7 +71,7 @@ class RunStatus(str, Enum):
         return self in terminal_states
 
 
-class Await(BaseModel):
+class AwaitRequest(BaseModel):
     type: Literal["placeholder"] = "placeholder"
 
 
@@ -100,21 +100,10 @@ class Run(BaseModel):
     agent_name: AgentName
     session_id: SessionId | None = None
     status: RunStatus = RunStatus.CREATED
-    await_: Await | None = Field(None, alias="await")
+    await_request: AwaitRequest | None = None
     outputs: list[Message] = []
     artifacts: list[Artifact] = []
     error: Error | None = None
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    def model_dump_json(
-        self,
-        **kwargs: dict[str, Any],
-    ) -> str:
-        return super().model_dump_json(
-            by_alias=True,
-            **kwargs,
-        )
 
 
 class MessageEvent(BaseModel):
@@ -129,18 +118,7 @@ class ArtifactEvent(BaseModel):
 
 class AwaitEvent(BaseModel):
     type: Literal["await"] = "await"
-    await_: Await | None = Field(alias="await")
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    def model_dump_json(
-        self,
-        **kwargs: dict[str, Any],
-    ) -> str:
-        return super().model_dump_json(
-            by_alias=True,
-            **kwargs,
-        )
+    await_request: AwaitRequest | None = None
 
 
 class GenericEvent(BaseModel):
