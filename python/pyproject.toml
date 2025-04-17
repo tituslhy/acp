@@ -2,8 +2,10 @@
 name = "acp-sdk"
 version = "0.1.0rc8"
 description = "Agent Communication Protocol SDK"
+license = "Apache-2.0"
 readme = "README.md"
-authors = []
+authors = [{ name = "IBM Corp." }]
+maintainers = [{ name = "Tomas Pilar", email = "thomas7pilar@gmail.com" }]
 requires-python = ">=3.11, <4.0"
 dependencies = ["opentelemetry-api>=1.31.1", "pydantic>=2.11.1"]
 
