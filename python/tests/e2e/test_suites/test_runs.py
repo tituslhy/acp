@@ -5,14 +5,14 @@ from acp_sdk.client import Client
 from acp_sdk.models import (
     ArtifactEvent,
     AwaitResume,
-    CompletedEvent,
-    CreatedEvent,
     Message,
-    MessageEvent,
+    MessageCreatedEvent,
     MessagePart,
+    RunCompletedEvent,
+    RunCreatedEvent,
+    RunInProgressEvent,
     RunStatus,
 )
-from acp_sdk.models.models import InProgressEvent
 from acp_sdk.server import Server
 
 inputs = [Message(parts=[MessagePart(content="Hello!", content_type="text/plain")])]
@@ -34,8 +34,8 @@ async def test_run_async(server: Server, client: Client) -> None:
 @pytest.mark.asyncio
 async def test_run_stream(server: Server, client: Client) -> None:
     event_stream = [event async for event in client.run_stream(agent="echo", inputs=inputs)]
-    assert isinstance(event_stream[0], CreatedEvent)
-    assert isinstance(event_stream[-1], CompletedEvent)
+    assert isinstance(event_stream[0], RunCreatedEvent)
+    assert isinstance(event_stream[-1], RunCompletedEvent)
 
 
 @pytest.mark.asyncio
@@ -87,8 +87,8 @@ async def test_run_resume_stream(server: Server, client: Client) -> None:
     assert run.await_request is not None
 
     event_stream = [event async for event in client.run_resume_stream(run_id=run.run_id, await_=AwaitResume())]
-    assert isinstance(event_stream[0], InProgressEvent)
-    assert isinstance(event_stream[-1], CompletedEvent)
+    assert isinstance(event_stream[0], RunInProgressEvent)
+    assert isinstance(event_stream[-1], RunCompletedEvent)
 
 
 @pytest.mark.asyncio
@@ -149,11 +149,11 @@ async def test_artifacts(server: Server, client: Client) -> None:
     assert len(run.outputs) == 1
     assert run.outputs[0].parts[0].content == "Processing with artifacts"
 
-    assert len(run.artifacts) == 3
+    assert len(run.outputs[0].parts) == 4
 
-    text_artifact = next((a for a in run.artifacts if a.name == "text-result.txt"), None)
-    json_artifact = next((a for a in run.artifacts if a.name == "data.json"), None)
-    image_artifact = next((a for a in run.artifacts if a.name == "image.png"), None)
+    text_artifact = next((a for a in run.outputs[0].parts if a.name == "text-result.txt"), None)
+    json_artifact = next((a for a in run.outputs[0].parts if a.name == "data.json"), None)
+    image_artifact = next((a for a in run.outputs[0].parts if a.name == "image.png"), None)
 
     assert text_artifact is not None
     assert text_artifact.content_type == "text/plain"
@@ -174,10 +174,10 @@ async def test_artifacts(server: Server, client: Client) -> None:
 async def test_artifact_streaming(server: Server, client: Client) -> None:
     events = [event async for event in client.run_stream(agent="artifact_producer", inputs=inputs)]
 
-    assert isinstance(events[0], CreatedEvent)
-    assert isinstance(events[-1], CompletedEvent)
+    assert isinstance(events[0], RunCreatedEvent)
+    assert isinstance(events[-1], RunCompletedEvent)
 
-    message_events = [e for e in events if isinstance(e, MessageEvent)]
+    message_events = [e for e in events if isinstance(e, MessageCreatedEvent)]
     artifact_events = [e for e in events if isinstance(e, ArtifactEvent)]
 
     assert len(message_events) == 1
@@ -185,11 +185,7 @@ async def test_artifact_streaming(server: Server, client: Client) -> None:
 
     assert len(artifact_events) == 3
 
-    artifact_types = [a.artifact.content_type for a in artifact_events]
+    artifact_types = [a.part.content_type for a in artifact_events]
     assert "text/plain" in artifact_types
     assert "application/json" in artifact_types
     assert "image/png" in artifact_types
-
-    async with client.session() as session:
-        run = await session.run_sync(agent="sessioner", inputs=inputs)
-        assert session.session_id == run.session_id

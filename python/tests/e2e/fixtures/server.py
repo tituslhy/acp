@@ -22,7 +22,7 @@ def server() -> Generator[None]:
     @server.agent()
     async def awaiter(inputs: list[Message], context: Context) -> AsyncGenerator[Message | AwaitRequest, AwaitResume]:
         yield AwaitRequest()
-        yield Message(parts=[MessagePart(content="empty", content_type="text/plain")])
+        yield MessagePart(content="empty", content_type="text/plain")
 
     @server.agent()
     async def failer(inputs: list[Message], context: Context) -> AsyncIterator[Message]:
@@ -32,18 +32,14 @@ def server() -> Generator[None]:
     async def sessioner(inputs: list[Message], context: Context) -> AsyncIterator[Message]:
         assert context.session_id is not None
 
-        yield Message(MessagePart(content=str(context.session_id), content_type="text/plain"))
+        yield MessagePart(content=str(context.session_id), content_type="text/plain")
 
     @server.agent()
     async def mime_types(inputs: list[Message], context: Context) -> AsyncIterator[Message]:
-        yield Message(
-            parts=[
-                MessagePart(content="<h1>HTML Content</h1>", content_type="text/html"),
-                MessagePart(content='{"key": "value"}', content_type="application/json"),
-                MessagePart(content="console.log('Hello');", content_type="application/javascript"),
-                MessagePart(content="body { color: red; }", content_type="text/css"),
-            ]
-        )
+        yield MessagePart(content="<h1>HTML Content</h1>", content_type="text/html")
+        yield MessagePart(content='{"key": "value"}', content_type="application/json")
+        yield MessagePart(content="console.log('Hello');", content_type="application/javascript")
+        yield MessagePart(content="body { color: red; }", content_type="text/css")
 
     @server.agent()
     async def base64_encoding(inputs: list[Message], context: Context) -> AsyncIterator[Message]:
@@ -62,7 +58,7 @@ def server() -> Generator[None]:
 
     @server.agent()
     async def artifact_producer(inputs: list[Message], context: Context) -> AsyncGenerator[Message | Artifact, None]:
-        yield Message(parts=[MessagePart(content="Processing with artifacts", content_type="text/plain")])
+        yield MessagePart(content="Processing with artifacts", content_type="text/plain")
         yield Artifact(name="text-result.txt", content_type="text/plain", content="This is a text artifact result")
         yield Artifact(
             name="data.json", content_type="application/json", content='{"results": [1, 2, 3], "status": "complete"}'

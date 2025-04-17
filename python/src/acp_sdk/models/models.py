@@ -31,6 +31,10 @@ class MessagePart(BaseModel):
             raise ValueError("Only one of content or content_url can be provided")
 
 
+class Artifact(MessagePart):
+    name: str
+
+
 class Message(BaseModel):
     parts: list[MessagePart]
 
@@ -79,22 +83,6 @@ class AwaitResume(BaseModel):
     pass
 
 
-class Artifact(BaseModel):
-    name: str
-    content_type: str
-    content: Optional[str] = None
-    content_encoding: Optional[Literal["plain", "base64"]] = "plain"
-    content_url: Optional[AnyUrl] = None
-
-    model_config = ConfigDict(extra="forbid")
-
-    def model_post_init(self, __context: Any) -> None:
-        if self.content is None and self.content_url is None:
-            raise ValueError("Either content or content_url must be provided")
-        if self.content is not None and self.content_url is not None:
-            raise ValueError("Only one of content or content_url can be provided")
-
-
 class Run(BaseModel):
     run_id: RunId = Field(default_factory=uuid.uuid4)
     agent_name: AgentName
@@ -102,18 +90,27 @@ class Run(BaseModel):
     status: RunStatus = RunStatus.CREATED
     await_request: AwaitRequest | None = None
     outputs: list[Message] = []
-    artifacts: list[Artifact] = []
     error: Error | None = None
 
 
-class MessageEvent(BaseModel):
-    type: Literal["message"] = "message"
+class MessageCreatedEvent(BaseModel):
+    type: Literal["message.created"] = "message.created"
     message: Message
 
 
+class MessagePartEvent(BaseModel):
+    type: Literal["message.part"] = "message.part"
+    part: MessagePart
+
+
 class ArtifactEvent(BaseModel):
-    type: Literal["artifact"] = "artifact"
-    artifact: Artifact
+    type: Literal["message.part"] = "message.part"
+    part: Artifact
+
+
+class MessageCompletedEvent(BaseModel):
+    type: Literal["message.completed"] = "message.completed"
+    message: Message
 
 
 class AwaitEvent(BaseModel):
@@ -126,41 +123,44 @@ class GenericEvent(BaseModel):
     generic: AnyModel
 
 
-class CreatedEvent(BaseModel):
-    type: Literal["created"] = "created"
+class RunCreatedEvent(BaseModel):
+    type: Literal["run.created"] = "run.created"
     run: Run
 
 
-class InProgressEvent(BaseModel):
-    type: Literal["in-progress"] = "in-progress"
+class RunInProgressEvent(BaseModel):
+    type: Literal["run.in-progress"] = "run.in-progress"
     run: Run
 
 
-class FailedEvent(BaseModel):
-    type: Literal["failed"] = "failed"
+class RunFailedEvent(BaseModel):
+    type: Literal["run.failed"] = "run.failed"
     run: Run
 
 
-class CancelledEvent(BaseModel):
-    type: Literal["cancelled"] = "cancelled"
+class RunCancelledEvent(BaseModel):
+    type: Literal["run.cancelled"] = "run.cancelled"
     run: Run
 
 
-class CompletedEvent(BaseModel):
-    type: Literal["completed"] = "completed"
+class RunCompletedEvent(BaseModel):
+    type: Literal["run.completed"] = "run.completed"
     run: Run
 
 
-RunEvent = Union[
-    CreatedEvent,
-    InProgressEvent,
-    MessageEvent,
+Event = Union[
+    RunCreatedEvent,
+    RunInProgressEvent,
+    MessageCreatedEvent,
+    ArtifactEvent,
+    MessagePartEvent,
+    MessageCompletedEvent,
     AwaitEvent,
     GenericEvent,
-    CancelledEvent,
-    FailedEvent,
-    CompletedEvent,
-    ArtifactEvent,
+    RunCancelledEvent,
+    RunFailedEvent,
+    RunCompletedEvent,
+    MessagePartEvent,
 ]
 
 

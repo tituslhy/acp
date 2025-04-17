@@ -16,14 +16,14 @@ from acp_sdk.models import (
     AgentReadResponse,
     AgentsListResponse,
     AwaitResume,
-    CreatedEvent,
+    RunCreatedEvent,
     Error,
     Message,
     Run,
     RunCancelResponse,
     RunCreateRequest,
     RunCreateResponse,
-    RunEvent,
+    Event,
     RunId,
     RunMode,
     RunResumeRequest,
@@ -107,7 +107,7 @@ class Client:
         self._set_session(response)
         return response
 
-    async def run_stream(self, *, agent: AgentName, inputs: list[Message]) -> AsyncIterator[RunEvent]:
+    async def run_stream(self, *, agent: AgentName, inputs: list[Message]) -> AsyncIterator[Event]:
         async with aconnect_sse(
             self._client,
             "POST",
@@ -120,7 +120,7 @@ class Client:
             ).model_dump_json(),
         ) as event_source:
             async for event in self._validate_stream(event_source):
-                if isinstance(event, CreatedEvent):
+                if isinstance(event, RunCreatedEvent):
                     self._set_session(event.run)
                 yield event
 
@@ -150,7 +150,7 @@ class Client:
         self._raise_error(response)
         return RunResumeResponse.model_validate(response.json())
 
-    async def run_resume_stream(self, *, run_id: RunId, await_: AwaitResume) -> AsyncIterator[RunEvent]:
+    async def run_resume_stream(self, *, run_id: RunId, await_: AwaitResume) -> AsyncIterator[Event]:
         async with aconnect_sse(
             self._client,
             "POST",
@@ -163,9 +163,9 @@ class Client:
     async def _validate_stream(
         self,
         event_source: EventSource,
-    ) -> AsyncIterator[RunEvent]:
+    ) -> AsyncIterator[Event]:
         async for event in event_source.aiter_sse():
-            event = TypeAdapter(RunEvent).validate_json(event.data)
+            event = TypeAdapter(Event).validate_json(event.data)
             yield event
 
     def _raise_error(self, response: httpx.Response) -> None:

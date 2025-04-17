@@ -17,9 +17,9 @@ async def awaiting(
     inputs: list[Message], context: Context
 ) -> AsyncGenerator[Message | AwaitRequest | Any, AwaitResume]:
     """Greets and awaits for more data"""
-    yield Message(parts=[MessagePart(content="Hello!", content_type="text/plain")])
+    yield MessagePart(content="Hello!", content_type="text/plain")
     data = yield AwaitRequest()
-    yield Message(parts=[MessagePart(content=f"Thanks for {data}", content_type="text/plain")])
+    yield MessagePart(content=f"Thanks for {data}", content_type="text/plain")
 
 
 server.run()
