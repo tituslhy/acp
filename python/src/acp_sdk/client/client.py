@@ -4,8 +4,10 @@ from contextlib import asynccontextmanager
 from types import TracebackType
 from typing import Self
 
+from acp_sdk.instrumentation import get_tracer
 import httpx
 from httpx_sse import EventSource, aconnect_sse
+from opentelemetry import trace
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from pydantic import TypeAdapter
 
@@ -62,7 +64,8 @@ class Client:
 
     @asynccontextmanager
     async def session(self, session_id: SessionId | None = None) -> AsyncGenerator[Self]:
-        yield Client(client=self._client, session_id=session_id or uuid.uuid4(), instrument=False)
+        with get_tracer().start_as_current_span("session"):
+            yield Client(client=self._client, session_id=session_id or uuid.uuid4(), instrument=False)
 
     async def agents(self) -> AsyncIterator[Agent]:
         response = await self._client.get("/agents")

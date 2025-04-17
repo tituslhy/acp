@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from pydantic import ValidationError
 
+from acp_sdk.instrumentation import get_tracer
 from acp_sdk.models import (
     ACPError,
     AnyModel,
@@ -30,7 +31,6 @@ from acp_sdk.models import (
 )
 from acp_sdk.server.agent import Agent
 from acp_sdk.server.logging import logger
-from acp_sdk.server.telemetry import get_tracer
 
 
 class RunBundle:
