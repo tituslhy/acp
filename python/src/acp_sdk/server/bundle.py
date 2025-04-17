@@ -127,6 +127,8 @@ class RunBundle:
                         await_resume = await self.await_()
                         await self.emit(RunInProgressEvent(run=self.run))
                         run_logger.info("Run resumed")
+                    elif isinstance(next, Error):
+                        raise ACPError(error=next)
                     else:
                         try:
                             generic = AnyModel.model_validate(next)

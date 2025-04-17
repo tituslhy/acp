@@ -26,7 +26,7 @@ def server() -> Generator[None]:
 
     @server.agent()
     async def failer(inputs: list[Message], context: Context) -> AsyncIterator[Message]:
-        raise ACPError(Error(code=ErrorCode.INVALID_INPUT, message="Wrong question buddy!"))
+        yield Error(code=ErrorCode.INVALID_INPUT, message="Wrong question buddy!")
 
     @server.agent()
     async def sessioner(inputs: list[Message], context: Context) -> AsyncIterator[Message]:
