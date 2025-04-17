@@ -5,6 +5,7 @@ from acp_sdk.client import Client
 from acp_sdk.models import (
     ArtifactEvent,
     AwaitResume,
+    ErrorCode,
     Message,
     MessageCreatedEvent,
     MessagePart,
@@ -12,7 +13,6 @@ from acp_sdk.models import (
     RunCreatedEvent,
     RunInProgressEvent,
     RunStatus,
-    ErrorCode,
 )
 from acp_sdk.server import Server
 
