@@ -22,6 +22,11 @@ pip install acp-sdk[server]
 
 ## Overview
 
+### Core
+
+The core of the SDK exposes [pydantic](https://docs.pydantic.dev/) data models corresponding to REST API requests, responses, resources, events and errors.
+
+
 ### Client
 
 The `client` submodule exposes [httpx](https://www.python-httpx.org/) based client with simple methods for communication over ACP.
