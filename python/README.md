@@ -24,17 +24,18 @@ pip install acp-sdk[server]
 
 ### Client
 
-The `client` submodule exposes [httpx]() based client with simple methods for communication over ACP.
+The `client` submodule exposes [httpx](https://www.python-httpx.org/) based client with simple methods for communication over ACP.
 
 ```python
 async with Client(base_url="http://localhost:8000") as client:
     run = await client.run_sync(agent="echo", inputs=[Message(TextMessagePart(content="Howdy!"))])
-    print(run.output)
+    print(run)
+
 ```
 
 ### Server
 
-The `server` submodule exposes [fastapi] application factory that makes it easy to expose any agent over ACP.
+The `server` submodule exposes [fastapi](https://fastapi.tiangolo.com/) application factory that makes it easy to server agent over ACP. Additionaly, it exposes [uvicorn](https://www.uvicorn.org/) based server with more agent registration capabilities, default logging and [opentelemetry](https://opentelemetry.io/) support.
 
 ```python
 server = Server()
@@ -43,7 +44,6 @@ server = Server()
 async def echo(inputs: list[Message], context: Context) -> AsyncGenerator[RunYield, RunYieldResume]:
     """Echoes everything"""
     for message in inputs:
-        await asyncio.sleep(0.5)
         yield {"thought": "I should echo everyting"}
         await asyncio.sleep(0.5)
         yield message
