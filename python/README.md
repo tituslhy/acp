@@ -20,6 +20,12 @@ Install to use server:
 pip install acp-sdk[server]
 ```
 
+Install to use models only:
+
+```shell
+pip install acp-sdk
+```
+
 ## Overview
 
 ### Core
@@ -65,11 +71,11 @@ The architecture of the SDK is outlined in the following segment. It focuses on 
 
 ### Models
 
-The core of the SDK contains pydantic models for request, responses, resources, events and errors. Users of the SDK are meant to use these models directly or indirectly.
+The core of the SDK contains pydantic models for requests, responses, resources, events and errors. Users of the SDK are meant to use these models directly or indirectly.
 
 ### Server
 
-The server modules consists of 3 parts:
+The server module consists of 3 parts:
   
   1. Agent interface
   2. FastAPI application factory
@@ -79,7 +85,7 @@ Each part builds on top of the previous one. Not all parts need to be used, e.g.
 
 ### Client
 
-The client modules consists of httpx based client with session support. The client is meant to be thin and mimic the REST API. Exception is session management which has been abstracted into a context manager.
+The client module consists of httpx based client with session support. The client is meant to be thin and mimic the REST API. Exception is session management which has been abstracted into a context manager.
 
 
   
