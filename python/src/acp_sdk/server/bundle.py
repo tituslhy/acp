@@ -6,14 +6,18 @@ from concurrent.futures import ThreadPoolExecutor
 from pydantic import ValidationError
 
 from acp_sdk.models import (
+    ACPError,
     AnyModel,
     AwaitRequest,
     AwaitResume,
     Error,
+    ErrorCode,
     Event,
     GenericEvent,
     Message,
+    MessageCompletedEvent,
     MessageCreatedEvent,
+    MessagePart,
     MessagePartEvent,
     Run,
     RunAwaitingEvent,
@@ -24,8 +28,6 @@ from acp_sdk.models import (
     RunInProgressEvent,
     RunStatus,
 )
-from acp_sdk.models.errors import ErrorCode
-from acp_sdk.models.models import MessageCompletedEvent, MessagePart
 from acp_sdk.server.agent import Agent
 from acp_sdk.server.logging import logger
 from acp_sdk.server.telemetry import get_tracer
@@ -142,7 +144,10 @@ class RunBundle:
                 await self.emit(RunCancelledEvent(run=self.run))
                 run_logger.info("Run cancelled")
             except Exception as e:
-                self.run.error = Error(code=ErrorCode.SERVER_ERROR, message=str(e))
+                if isinstance(e, ACPError):
+                    self.run.error = e.error
+                else:
+                    self.run.error = Error(code=ErrorCode.SERVER_ERROR, message=str(e))
                 self.run.status = RunStatus.FAILED
                 await self.emit(RunFailedEvent(run=self.run))
                 run_logger.exception("Run failed")

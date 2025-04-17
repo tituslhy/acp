@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator, AsyncIterator, Generator
 from threading import Thread
 
 import pytest
-from acp_sdk.models import Artifact, AwaitRequest, AwaitResume, Message, MessagePart
+from acp_sdk.models import ACPError, Artifact, AwaitRequest, AwaitResume, Error, ErrorCode, Message, MessagePart
 from acp_sdk.server import Context, Server
 
 from e2e.config import Config
@@ -26,7 +26,7 @@ def server() -> Generator[None]:
 
     @server.agent()
     async def failer(inputs: list[Message], context: Context) -> AsyncIterator[Message]:
-        raise RuntimeError("Whoops")
+        raise ACPError(Error(code=ErrorCode.INVALID_INPUT, message="Wrong question buddy!"))
 
     @server.agent()
     async def sessioner(inputs: list[Message], context: Context) -> AsyncIterator[Message]:

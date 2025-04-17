@@ -12,6 +12,7 @@ from acp_sdk.models import (
     RunCreatedEvent,
     RunInProgressEvent,
     RunStatus,
+    ErrorCode,
 )
 from acp_sdk.server import Server
 
@@ -50,6 +51,8 @@ async def test_run_status(server: Server, client: Client) -> None:
 async def test_failure(server: Server, client: Client) -> None:
     run = await client.run_sync(agent="failer", inputs=inputs)
     assert run.status == RunStatus.FAILED
+    assert run.error is not None
+    assert run.error.code == ErrorCode.INVALID_INPUT
 
 
 @pytest.mark.asyncio

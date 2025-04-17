@@ -12,7 +12,7 @@ async def example() -> None:
         run = await client.run_sync(
             agent="echo", inputs=[Message(parts=[MessagePart(content="Howdy!", content_type="text/plain")])]
         )
-        print(run.outputs)
+        print(run)
 
 
 if __name__ == "__main__":
