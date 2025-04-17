@@ -120,15 +120,7 @@ class RunBundle:
                     elif isinstance(next, AwaitRequest):
                         self.run.await_request = next
                         self.run.status = RunStatus.AWAITING
-                        await self.emit(
-                            RunAwaitingEvent.model_validate(
-                                {
-                                    "run_id": self.run.run_id,
-                                    "type": "await",
-                                    "await": next,
-                                }
-                            )
-                        )
+                        await self.emit(RunAwaitingEvent(run=self.run))
                         run_logger.info("Run awaited")
                         await_resume = await self.await_()
                         await self.emit(RunInProgressEvent(run=self.run))

@@ -66,7 +66,7 @@ async def test_run_resume_sync(server: Server, client: Client) -> None:
     assert run.status == RunStatus.AWAITING
     assert run.await_request is not None
 
-    run = await client.run_resume_sync(run_id=run.run_id, await_=AwaitResume())
+    run = await client.run_resume_sync(run_id=run.run_id, await_resume=AwaitResume())
     assert run.status == RunStatus.COMPLETED
 
 
@@ -76,7 +76,7 @@ async def test_run_resume_async(server: Server, client: Client) -> None:
     assert run.status == RunStatus.AWAITING
     assert run.await_request is not None
 
-    run = await client.run_resume_async(run_id=run.run_id, await_=AwaitResume())
+    run = await client.run_resume_async(run_id=run.run_id, await_resume=AwaitResume())
     assert run.status == RunStatus.IN_PROGRESS
 
 
@@ -86,7 +86,7 @@ async def test_run_resume_stream(server: Server, client: Client) -> None:
     assert run.status == RunStatus.AWAITING
     assert run.await_request is not None
 
-    event_stream = [event async for event in client.run_resume_stream(run_id=run.run_id, await_=AwaitResume())]
+    event_stream = [event async for event in client.run_resume_stream(run_id=run.run_id, await_resume=AwaitResume())]
     assert isinstance(event_stream[0], RunInProgressEvent)
     assert isinstance(event_stream[-1], RunCompletedEvent)
 

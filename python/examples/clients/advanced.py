@@ -13,7 +13,9 @@ async def example() -> None:
             # Additional client configuration
         )
     ) as client:
-        run = await client.run_sync(agent="echo", inputs=[Message(parts=[MessagePart(content="Howdy!")])])
+        run = await client.run_sync(
+            agent="echo", inputs=[Message(parts=[MessagePart(content="Howdy!", content_type="text/plain")])]
+        )
         print(run)
 
 

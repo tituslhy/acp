@@ -39,16 +39,14 @@ class Client:
         base_url: httpx.URL | str = "",
         session_id: SessionId | None = None,
         client: httpx.AsyncClient | None = None,
+        instrument: bool = True,
     ) -> None:
         self.base_url = base_url
         self.session_id = session_id
 
-        self._client = self._init_client(client)
-
-    def _init_client(self, client: httpx.AsyncClient | None = None) -> httpx.AsyncClient:
-        client = client or httpx.AsyncClient(base_url=self.base_url)
-        HTTPXClientInstrumentor.instrument_client(client)
-        return client
+        self._client = client or httpx.AsyncClient(base_url=self.base_url)
+        if instrument:
+            HTTPXClientInstrumentor.instrument_client(self._client)
 
     async def __aenter__(self) -> Self:
         await self._client.__aenter__()
@@ -64,7 +62,7 @@ class Client:
 
     @asynccontextmanager
     async def session(self, session_id: SessionId | None = None) -> AsyncGenerator[Self]:
-        yield Client(client=self._client, session_id=session_id or uuid.uuid4())
+        yield Client(client=self._client, session_id=session_id or uuid.uuid4(), instrument=False)
 
     async def agents(self) -> AsyncIterator[Agent]:
         response = await self._client.get("/agents")
@@ -134,28 +132,28 @@ class Client:
         self._raise_error(response)
         return RunCancelResponse.model_validate(response.json())
 
-    async def run_resume_sync(self, *, run_id: RunId, await_: AwaitResume) -> Run:
+    async def run_resume_sync(self, *, run_id: RunId, await_resume: AwaitResume) -> Run:
         response = await self._client.post(
             f"/runs/{run_id}",
-            json=RunResumeRequest(await_resume=await_, mode=RunMode.SYNC).model_dump(),
+            json=RunResumeRequest(await_resume=await_resume, mode=RunMode.SYNC).model_dump(),
         )
         self._raise_error(response)
         return RunResumeResponse.model_validate(response.json())
 
-    async def run_resume_async(self, *, run_id: RunId, await_: AwaitResume) -> Run:
+    async def run_resume_async(self, *, run_id: RunId, await_resume: AwaitResume) -> Run:
         response = await self._client.post(
             f"/runs/{run_id}",
-            json=RunResumeRequest(await_resume=await_, mode=RunMode.ASYNC).model_dump(),
+            json=RunResumeRequest(await_resume=await_resume, mode=RunMode.ASYNC).model_dump(),
         )
         self._raise_error(response)
         return RunResumeResponse.model_validate(response.json())
 
-    async def run_resume_stream(self, *, run_id: RunId, await_: AwaitResume) -> AsyncIterator[Event]:
+    async def run_resume_stream(self, *, run_id: RunId, await_resume: AwaitResume) -> AsyncIterator[Event]:
         async with aconnect_sse(
             self._client,
             "POST",
             f"/runs/{run_id}",
-            json=RunResumeRequest(await_resume=await_, mode=RunMode.STREAM).model_dump(),
+            json=RunResumeRequest(await_resume=await_resume, mode=RunMode.STREAM).model_dump(),
         ) as event_source:
             async for event in self._validate_stream(event_source):
                 yield event
