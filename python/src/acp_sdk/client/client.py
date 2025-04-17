@@ -137,7 +137,7 @@ class Client:
     async def run_resume_sync(self, *, run_id: RunId, await_: AwaitResume) -> Run:
         response = await self._client.post(
             f"/runs/{run_id}",
-            json=RunResumeRequest(await_=await_, mode=RunMode.SYNC).model_dump(),
+            json=RunResumeRequest(await_resume=await_, mode=RunMode.SYNC).model_dump(),
         )
         self._raise_error(response)
         return RunResumeResponse.model_validate(response.json())
@@ -145,7 +145,7 @@ class Client:
     async def run_resume_async(self, *, run_id: RunId, await_: AwaitResume) -> Run:
         response = await self._client.post(
             f"/runs/{run_id}",
-            json=RunResumeRequest(await_=await_, mode=RunMode.ASYNC).model_dump(),
+            json=RunResumeRequest(await_resume=await_, mode=RunMode.ASYNC).model_dump(),
         )
         self._raise_error(response)
         return RunResumeResponse.model_validate(response.json())
@@ -155,7 +155,7 @@ class Client:
             self._client,
             "POST",
             f"/runs/{run_id}",
-            json=RunResumeRequest(await_=await_, mode=RunMode.STREAM).model_dump(),
+            json=RunResumeRequest(await_resume=await_, mode=RunMode.STREAM).model_dump(),
         ) as event_source:
             async for event in self._validate_stream(event_source):
                 yield event

@@ -144,7 +144,7 @@ def create_app(*agents: Agent) -> FastAPI:
     @app.post("/runs/{run_id}")
     async def resume_run(run_id: RunId, request: RunResumeRequest) -> RunResumeResponse:
         bundle = find_run_bundle(run_id)
-        await bundle.resume(request.await_)
+        await bundle.resume(request.await_resume)
         match request.mode:
             case RunMode.STREAM:
                 return StreamingResponse(
