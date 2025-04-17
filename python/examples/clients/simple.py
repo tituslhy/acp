@@ -10,7 +10,7 @@ from acp_sdk.models import (
 async def example() -> None:
     async with Client(base_url="http://localhost:8000") as client:
         run = await client.run_sync(
-            agent="echo", inputs=[Message(MessagePart(content="Howdy!", content_type="text/plain"))]
+            agent="echo", inputs=[Message(parts=[MessagePart(content="Howdy!", content_type="text/plain")])]
         )
         print(run.outputs)
 

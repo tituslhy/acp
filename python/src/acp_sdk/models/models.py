@@ -1,9 +1,8 @@
 import uuid
-from collections.abc import Iterator
 from enum import Enum
 from typing import Any, Literal, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field, RootModel
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field
 
 from acp_sdk.models.errors import Error
 
@@ -32,23 +31,17 @@ class MessagePart(BaseModel):
             raise ValueError("Only one of content or content_url can be provided")
 
 
-class Message(RootModel):
-    root: list[MessagePart]
-
-    def __init__(self, *items: MessagePart) -> None:
-        super().__init__(root=list(items))
-
-    def __iter__(self) -> Iterator[MessagePart]:
-        return iter(self.root)
+class Message(BaseModel):
+    parts: list[MessagePart]
 
     def __add__(self, other: "Message") -> "Message":
         if not isinstance(other, Message):
             raise TypeError(f"Cannot concatenate Message with {type(other).__name__}")
-        return Message(*(self.root + other.root))
+        return Message(*(self.parts + other.parts))
 
     def __str__(self) -> str:
         return "".join(
-            part.content for part in self.root if part.content is not None and part.content_type == "text/plain"
+            part.content for part in self.parts if part.content is not None and part.content_type == "text/plain"
         )
 
 

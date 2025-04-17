@@ -15,7 +15,7 @@ from acp_sdk.models import (
 from acp_sdk.models.models import InProgressEvent
 from acp_sdk.server import Server
 
-inputs = [Message(MessagePart(content="Hello!", content_type="text/plain"))]
+inputs = [Message(parts=[MessagePart(content="Hello!", content_type="text/plain")])]
 
 
 @pytest.mark.asyncio
@@ -106,7 +106,7 @@ async def test_mime_types(server: Server, client: Client) -> None:
     assert run.status == RunStatus.COMPLETED
     assert len(run.outputs) == 1
 
-    message_parts = run.outputs[0].root
+    message_parts = run.outputs[0].parts
     content_types = [part.content_type for part in message_parts]
 
     assert "text/html" in content_types
@@ -127,7 +127,7 @@ async def test_base64_encoding(server: Server, client: Client) -> None:
     assert run.status == RunStatus.COMPLETED
     assert len(run.outputs) == 1
 
-    message_parts = run.outputs[0].root
+    message_parts = run.outputs[0].parts
     assert len(message_parts) == 2
 
     base64_part = next((part for part in message_parts if part.content_encoding == "base64"), None)
@@ -147,7 +147,7 @@ async def test_artifacts(server: Server, client: Client) -> None:
     assert run.status == RunStatus.COMPLETED
 
     assert len(run.outputs) == 1
-    assert run.outputs[0].root[0].content == "Processing with artifacts"
+    assert run.outputs[0].parts[0].content == "Processing with artifacts"
 
     assert len(run.artifacts) == 3
 
@@ -181,7 +181,7 @@ async def test_artifact_streaming(server: Server, client: Client) -> None:
     artifact_events = [e for e in events if isinstance(e, ArtifactEvent)]
 
     assert len(message_events) == 1
-    assert message_events[0].message.root[0].content == "Processing with artifacts"
+    assert message_events[0].message.parts[0].content == "Processing with artifacts"
 
     assert len(artifact_events) == 3
 

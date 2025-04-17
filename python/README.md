@@ -39,7 +39,7 @@ The `client` submodule exposes [httpx](https://www.python-httpx.org/) based clie
 
 ```python
 async with Client(base_url="http://localhost:8000") as client:
-    run = await client.run_sync(agent="echo", inputs=[Message(TextMessagePart(content="Howdy!"))])
+    run = await client.run_sync(agent="echo", inputs=[Message(parts=[MessagePart(content="Howdy!")])])
     print(run)
 
 ```
