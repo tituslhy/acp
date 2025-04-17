@@ -113,9 +113,9 @@ class MessageCompletedEvent(BaseModel):
     message: Message
 
 
-class AwaitEvent(BaseModel):
-    type: Literal["await"] = "await"
-    await_request: AwaitRequest | None = None
+class RunAwaitingEvent(BaseModel):
+    type: Literal["run.awaiting"] = "run.awaiting"
+    run: Run
 
 
 class GenericEvent(BaseModel):
@@ -155,7 +155,7 @@ Event = Union[
     ArtifactEvent,
     MessagePartEvent,
     MessageCompletedEvent,
-    AwaitEvent,
+    RunAwaitingEvent,
     GenericEvent,
     RunCancelledEvent,
     RunFailedEvent,

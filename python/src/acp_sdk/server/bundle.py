@@ -7,7 +7,6 @@ from pydantic import ValidationError
 
 from acp_sdk.models import (
     AnyModel,
-    AwaitEvent,
     AwaitRequest,
     AwaitResume,
     Error,
@@ -17,6 +16,7 @@ from acp_sdk.models import (
     MessageCreatedEvent,
     MessagePartEvent,
     Run,
+    RunAwaitingEvent,
     RunCancelledEvent,
     RunCompletedEvent,
     RunCreatedEvent,
@@ -121,7 +121,7 @@ class RunBundle:
                         self.run.await_request = next
                         self.run.status = RunStatus.AWAITING
                         await self.emit(
-                            AwaitEvent.model_validate(
+                            RunAwaitingEvent.model_validate(
                                 {
                                     "run_id": self.run.run_id,
                                     "type": "await",
