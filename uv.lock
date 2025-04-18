@@ -16,63 +16,33 @@ dev = [
 
 [[package]]
 name = "acp-sdk"
-version = "0.2.5"
+version = "0.3.0"
 source = { editable = "python" }
 dependencies = [
+    { name = "fastapi", extra = ["standard"] },
+    { name = "httpx" },
+    { name = "httpx-sse" },
+    { name = "janus" },
     { name = "opentelemetry-api" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "opentelemetry-instrumentation-fastapi" },
+    { name = "opentelemetry-instrumentation-httpx" },
+    { name = "opentelemetry-sdk" },
     { name = "pydantic" },
-]
-
-[package.optional-dependencies]
-client = [
-    { name = "httpx" },
-    { name = "httpx-sse" },
-    { name = "opentelemetry-instrumentation-httpx" },
-]
-server = [
-    { name = "fastapi", extra = ["standard"] },
-    { name = "janus" },
-    { name = "opentelemetry-exporter-otlp-proto-http" },
-    { name = "opentelemetry-instrumentation-fastapi" },
-    { name = "opentelemetry-sdk" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "fastapi", extra = ["standard"] },
-    { name = "httpx" },
-    { name = "httpx-sse" },
-    { name = "janus" },
-    { name = "opentelemetry-exporter-otlp-proto-http" },
-    { name = "opentelemetry-instrumentation-fastapi" },
-    { name = "opentelemetry-instrumentation-httpx" },
-    { name = "opentelemetry-sdk" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "fastapi", extras = ["standard"], marker = "extra == 'server'", specifier = ">=0.115.8" },
-    { name = "httpx", marker = "extra == 'client'", specifier = ">=0.28.1" },
-    { name = "httpx-sse", marker = "extra == 'client'", specifier = ">=0.4.0" },
-    { name = "janus", marker = "extra == 'server'", specifier = ">=2.0.0" },
-    { name = "opentelemetry-api", specifier = ">=1.31.1" },
-    { name = "opentelemetry-exporter-otlp-proto-http", marker = "extra == 'server'", specifier = ">=1.31.1" },
-    { name = "opentelemetry-instrumentation-fastapi", marker = "extra == 'server'", specifier = ">=0.52b1" },
-    { name = "opentelemetry-instrumentation-httpx", marker = "extra == 'client'", specifier = ">=0.52b1" },
-    { name = "opentelemetry-sdk", marker = "extra == 'server'", specifier = ">=1.31.1" },
-    { name = "pydantic", specifier = ">=2.11.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.8" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "httpx-sse", specifier = ">=0.4.0" },
     { name = "janus", specifier = ">=2.0.0" },
+    { name = "opentelemetry-api", specifier = ">=1.31.1" },
     { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.31.1" },
     { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.52b1" },
     { name = "opentelemetry-instrumentation-httpx", specifier = ">=0.52b1" },
     { name = "opentelemetry-sdk", specifier = ">=1.31.1" },
+    { name = "pydantic", specifier = ">=2.11.1" },
 ]
 
 [[package]]
