@@ -38,16 +38,20 @@ class Client:
         self,
         *,
         base_url: httpx.URL | str = "",
+        timeout: httpx.Timeout | None = None,
         session_id: SessionId | None = None,
         client: httpx.AsyncClient | None = None,
         instrument: bool = True,
     ) -> None:
-        self.base_url = base_url
-        self.session_id = session_id
+        self._session_id = session_id
 
-        self._client = client or httpx.AsyncClient(base_url=self.base_url)
+        self._client = client or httpx.AsyncClient(base_url=base_url, timeout=timeout)
         if instrument:
             HTTPXClientInstrumentor.instrument_client(self._client)
+
+    @property
+    def client(self) -> httpx.AsyncClient:
+        return self._client
 
     async def __aenter__(self) -> Self:
         await self._client.__aenter__()
@@ -85,7 +89,7 @@ class Client:
                 agent_name=agent,
                 inputs=inputs,
                 mode=RunMode.SYNC,
-                session_id=self.session_id,
+                session_id=self._session_id,
             ).model_dump_json(),
         )
         self._raise_error(response)
@@ -100,7 +104,7 @@ class Client:
                 agent_name=agent,
                 inputs=inputs,
                 mode=RunMode.ASYNC,
-                session_id=self.session_id,
+                session_id=self._session_id,
             ).model_dump_json(),
         )
         self._raise_error(response)
@@ -117,7 +121,7 @@ class Client:
                 agent_name=agent,
                 inputs=inputs,
                 mode=RunMode.STREAM,
-                session_id=self.session_id,
+                session_id=self._session_id,
             ).model_dump_json(),
         ) as event_source:
             async for event in self._validate_stream(event_source):
@@ -176,4 +180,4 @@ class Client:
             raise ACPError(Error.model_validate(response.json()))
 
     def _set_session(self, run: Run) -> None:
-        self.session_id = run.session_id
+        self._session_id = run.session_id
