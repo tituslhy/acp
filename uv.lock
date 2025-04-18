@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.11, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12.4'",
@@ -41,7 +40,7 @@ requires-dist = [
 
 [[package]]
 name = "acp-sdk"
-version = "0.3.1"
+version = "0.3.2"
 source = { editable = "python" }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
