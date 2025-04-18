@@ -21,4 +21,4 @@ In this repository you are going to find the documentation, specification and to
 
 ## Get Involved
 
-Join our GitHub discussions to help shape this evolving standard and build the foundation for an open, interoperable Internet of Agents.
+Join our GitHub [discussions](https://github.com/orgs/i-am-bee/discussions) to help shape this evolving standard and build the foundation for an open, interoperable Internet of Agents.
