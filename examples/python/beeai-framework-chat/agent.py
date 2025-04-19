@@ -31,7 +31,7 @@ async def chat_agent(inputs: list[Message], context: Context) -> AsyncGenerator:
     """Request approval and respond to user's confirmation."""
 
     # ensure the model is pulled before running
-    llm = ChatModel.from_name("ollama:llama3.1:8b", ChatModelParameters(temperature=0))
+    llm = ChatModel.from_name("ollama:llama3.1", ChatModelParameters(temperature=0))
 
     # Configure tools
     tools: list[AnyTool] = [WikipediaTool(), OpenMeteoTool(), DuckDuckGoSearchTool()]

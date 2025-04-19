@@ -43,7 +43,7 @@ server = Server()
 async def echo(inputs: list[Message], context: Context) -> AsyncGenerator[RunYield, RunYieldResume]:
     """Echoes everything"""
     for message in inputs:
-        yield {"thought": "I should echo everyting"}
+        yield {"thought": "I should echo everything"}
         await asyncio.sleep(0.5)
         yield message
 
