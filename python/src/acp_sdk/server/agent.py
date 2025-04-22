@@ -129,7 +129,7 @@ def agent(
 
             @property
             def description(self) -> str:
-                return description or fn.__doc__ or ""
+                return description or inspect.getdoc(fn) or ""
 
             @property
             def metadata(self) -> Metadata:

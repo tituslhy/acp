@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from enum import Enum
 from typing import Any, Literal, Optional, Union
 
@@ -7,11 +8,62 @@ from pydantic import AnyUrl, BaseModel, ConfigDict, Field
 from acp_sdk.models.errors import Error
 
 
-class Metadata(BaseModel):
+class AnyModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class AnyModel(BaseModel):
+class Author(BaseModel):
+    name: str
+    email: str | None = None
+    url: AnyUrl | None = None
+
+
+class Contributor(BaseModel):
+    name: str
+    email: str | None = None
+    url: AnyUrl | None = None
+
+
+class LinkType(str, Enum):
+    SOURCE_CODE = "source-code"
+    CONTAINER_IMAGE = "container-image"
+    HOMEPAGE = "homepage"
+    DOCUMENTATION = "documentation"
+
+
+class Link(BaseModel):
+    type: LinkType
+    url: AnyUrl
+
+
+class DependencyType(str, Enum):
+    AGENT = "agent"
+    TOOL = "tool"
+    MODEL = "model"
+
+
+class Dependency(BaseModel):
+    type: DependencyType
+    name: str
+
+
+class Metadata(BaseModel):
+    annotations: AnyModel | None = None
+    documentation: str | None = None
+    license: str | None = None
+    programming_language: str | None = None
+    natural_languages: list[str] | None = None
+    framework: str | None = None
+    use_cases: list[str] | None = None
+    tags: list[str] | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    author: Author | None = None
+    contributors: list[Contributor] | None = None
+    links: list[Link] | None = None
+    dependencies: list[Dependency] | None = None
+    recommended_models: list[str] | None = None
+
     model_config = ConfigDict(extra="allow")
 
 
