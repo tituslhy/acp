@@ -3,16 +3,13 @@ info:
   title: ACP - Agent Communication Protocol
   description: >-
     The Agent Communication Protocol (ACP) provides a standardized RESTful API to manage and execute AI agents. It supports synchronous, asynchronous, and streamed interactions as well as stateless and stateful agents.
-  contact:
-    name: BeeAI
-    url: https://beeai.dev
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   version: 0.1.0
 externalDocs:
   description: Comprehensive documentation for ACP
-  url: https://docs.beeai.dev
+  # url: TBD
 servers:
   - url: http://localhost:8000
 tags:
