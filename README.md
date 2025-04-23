@@ -21,7 +21,7 @@
 
 <br>
 
-The **Agent Communication Protocol (ACP)** is an **open standard** enabling **seamless communication** between AI agents, regardless of their implementation details. In ACP, an **agent** is a software service that communicates through **multimodal messages**, primarily driven by natural language inputs and outputs. The protocol remains **agnostic** to how agents function internally, specifying only the **minimum assumptions** necessary for smooth interoperability. ACP defines a **standardized RESTful API** for managing and executing agents, supporting **synchronous**, **asynchronous**, and **streaming** interactions.
+The **Agent Communication Protocol (ACP)** is an open standard with open governance enabling  **seamless communication** between AI agents, regardless of their implementation details. In ACP, an **agent** is a software service that communicates through multimodal messages, primarily driven by natural language. The protocol is **agnostic** to how agents function internally, specifying only the **minimum assumptions** necessary for smooth interoperability. ACP defines a **standardized RESTful API** for managing and executing agents, supporting **synchronous**, **asynchronous**, and **streaming** interactions.
 
 ## Core Components
 
@@ -37,17 +37,16 @@ The **Agent Communication Protocol (ACP)** is an **open standard** enabling **se
 
 ## Quickstart
 
-**1. Create and activate a Python virtual environment**
+**1. Initialize your project**
 
 ```sh
-python3 -m venv .venv
-source .venv/bin/activate
+uv init
 ```
 
-**2. Install ACP SDK into the virtual environment**
+**2. Add the ACP SDK**
 
 ```sh
-pip install acp-sdk
+uv add acp-sdk
 ```
 
 **3. Create an agent**
