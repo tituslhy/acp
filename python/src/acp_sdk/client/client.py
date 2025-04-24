@@ -31,6 +31,9 @@ from acp_sdk.models import (
     RunResumeResponse,
     SessionId,
 )
+from acp_sdk.models.models import MessagePart
+
+Input = list[Message] | Message | list[MessagePart] | MessagePart | list[str] | str
 
 
 class Client:
@@ -79,14 +82,15 @@ class Client:
     async def agent(self, *, name: AgentName) -> Agent:
         response = await self._client.get(f"/agents/{name}")
         self._raise_error(response)
-        return AgentReadResponse.model_validate(response.json())
+        response = AgentReadResponse.model_validate(response.json())
+        return Agent(**response.model_dump())
 
-    async def run_sync(self, *, agent: AgentName, inputs: list[Message]) -> Run:
+    async def run_sync(self, input: Input, *, agent: AgentName) -> Run:
         response = await self._client.post(
             "/runs",
             content=RunCreateRequest(
                 agent_name=agent,
-                inputs=inputs,
+                inputs=self._unify_inputs(input),
                 mode=RunMode.SYNC,
                 session_id=self._session_id,
             ).model_dump_json(),
@@ -94,14 +98,14 @@ class Client:
         self._raise_error(response)
         response = RunCreateResponse.model_validate(response.json())
         self._set_session(response)
-        return response
+        return Run(**response.model_dump())
 
-    async def run_async(self, *, agent: AgentName, inputs: list[Message]) -> Run:
+    async def run_async(self, input: Input, *, agent: AgentName) -> Run:
         response = await self._client.post(
             "/runs",
             content=RunCreateRequest(
                 agent_name=agent,
-                inputs=inputs,
+                inputs=self._unify_inputs(input),
                 mode=RunMode.ASYNC,
                 session_id=self._session_id,
             ).model_dump_json(),
@@ -109,16 +113,16 @@ class Client:
         self._raise_error(response)
         response = RunCreateResponse.model_validate(response.json())
         self._set_session(response)
-        return response
+        return Run(**response.model_dump())
 
-    async def run_stream(self, *, agent: AgentName, inputs: list[Message]) -> AsyncIterator[Event]:
+    async def run_stream(self, input: Input, *, agent: AgentName) -> AsyncIterator[Event]:
         async with aconnect_sse(
             self._client,
             "POST",
             "/runs",
             content=RunCreateRequest(
                 agent_name=agent,
-                inputs=inputs,
+                inputs=self._unify_inputs(input),
                 mode=RunMode.STREAM,
                 session_id=self._session_id,
             ).model_dump_json(),
@@ -136,25 +140,28 @@ class Client:
     async def run_cancel(self, *, run_id: RunId) -> Run:
         response = await self._client.post(f"/runs/{run_id}/cancel")
         self._raise_error(response)
-        return RunCancelResponse.model_validate(response.json())
+        response = RunCancelResponse.model_validate(response.json())
+        return Run(**response.model_dump())
 
-    async def run_resume_sync(self, *, run_id: RunId, await_resume: AwaitResume) -> Run:
+    async def run_resume_sync(self, await_resume: AwaitResume, *, run_id: RunId) -> Run:
         response = await self._client.post(
             f"/runs/{run_id}",
             content=RunResumeRequest(await_resume=await_resume, mode=RunMode.SYNC).model_dump_json(),
         )
         self._raise_error(response)
-        return RunResumeResponse.model_validate(response.json())
+        response = RunResumeResponse.model_validate(response.json())
+        return Run(**response.model_dump())
 
-    async def run_resume_async(self, *, run_id: RunId, await_resume: AwaitResume) -> Run:
+    async def run_resume_async(self, await_resume: AwaitResume, *, run_id: RunId) -> Run:
         response = await self._client.post(
             f"/runs/{run_id}",
             content=RunResumeRequest(await_resume=await_resume, mode=RunMode.ASYNC).model_dump_json(),
         )
         self._raise_error(response)
-        return RunResumeResponse.model_validate(response.json())
+        response = RunResumeResponse.model_validate(response.json())
+        return Run(**response.model_dump())
 
-    async def run_resume_stream(self, *, run_id: RunId, await_resume: AwaitResume) -> AsyncIterator[Event]:
+    async def run_resume_stream(self, await_resume: AwaitResume, *, run_id: RunId) -> AsyncIterator[Event]:
         async with aconnect_sse(
             self._client,
             "POST",
@@ -183,3 +190,24 @@ class Client:
 
     def _set_session(self, run: Run) -> None:
         self._session_id = run.session_id
+
+    def _unify_inputs(self, input: Input) -> list[Message]:
+        if isinstance(input, list):
+            if len(input) == 0:
+                return []
+            if all(isinstance(item, Message) for item in input):
+                return input
+            elif all(isinstance(item, MessagePart) for item in input):
+                return [Message(parts=input)]
+            elif all(isinstance(item, str) for item in input):
+                return [Message(parts=[MessagePart(content=content) for content in input])]
+            else:
+                raise RuntimeError("List with mixed types is not supported")
+        else:
+            if isinstance(input, str):
+                input = MessagePart(content=input)
+            if isinstance(input, MessagePart):
+                input = Message(parts=[input])
+            if isinstance(input, Message):
+                input = [input]
+            return input
