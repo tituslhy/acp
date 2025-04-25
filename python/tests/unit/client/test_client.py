@@ -1,26 +1,51 @@
 import pytest
 from acp_sdk.client import Client
-from acp_sdk.models import Message, MessagePart, Run, RunCompletedEvent
+from acp_sdk.models import Agent, AgentsListResponse, Message, MessagePart, Run, RunCompletedEvent
+from acp_sdk.models.models import MessageAwaitResume
 from pytest_httpx import HTTPXMock
 
-mock_run = Run(agent_name="mock", output=[Message(parts=[MessagePart(content="Hello!")])])
+mock_agent = Agent(name="mock")
+mock_agents = [mock_agent]
+mock_run = Run(agent_name=mock_agent.name, output=[Message(parts=[MessagePart(content="Hello!")])])
+
+
+@pytest.mark.asyncio
+async def test_agents(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        url="http://test/agents", method="GET", content=AgentsListResponse(agents=mock_agents).model_dump_json()
+    )
+
+    async with Client(base_url="http://test") as client:
+        agents = [agent async for agent in client.agents()]
+        assert agents == mock_agents
+
+
+@pytest.mark.asyncio
+async def test_agent(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        url=f"http://test/agents/{mock_agent.name}", method="GET", content=mock_agent.model_dump_json()
+    )
+
+    async with Client(base_url="http://test") as client:
+        agent = await client.agent(name=mock_agent.name)
+        assert agent == mock_agent
 
 
 @pytest.mark.asyncio
 async def test_run_sync(httpx_mock: HTTPXMock) -> None:
-    httpx_mock.add_response(content=mock_run.model_dump_json())
+    httpx_mock.add_response(url="http://test/runs", method="POST", content=mock_run.model_dump_json())
 
-    async with Client(base_url="http://localhost:8000") as client:
-        run = await client.run_sync("Howdy!", agent="mock")
+    async with Client(base_url="http://test") as client:
+        run = await client.run_sync("Howdy!", agent=mock_run.agent_name)
         assert run == mock_run
 
 
 @pytest.mark.asyncio
 async def test_run_async(httpx_mock: HTTPXMock) -> None:
-    httpx_mock.add_response(content=mock_run.model_dump_json())
+    httpx_mock.add_response(url="http://test/runs", method="POST", content=mock_run.model_dump_json())
 
-    async with Client(base_url="http://localhost:8000") as client:
-        run = await client.run_async("Howdy!", agent="mock")
+    async with Client(base_url="http://test") as client:
+        run = await client.run_async("Howdy!", agent=mock_run.agent_name)
         assert run == mock_run
 
 
@@ -28,9 +53,71 @@ async def test_run_async(httpx_mock: HTTPXMock) -> None:
 async def test_run_stream(httpx_mock: HTTPXMock) -> None:
     mock_event = RunCompletedEvent(run=mock_run)
     httpx_mock.add_response(
-        headers={"content-type": "text/event-stream"}, content=f"data: {mock_event.model_dump_json()}\n\n"
+        url="http://test/runs",
+        method="POST",
+        headers={"content-type": "text/event-stream"},
+        content=f"data: {mock_event.model_dump_json()}\n\n",
     )
 
-    async with Client(base_url="http://localhost:8000") as client:
-        async for event in client.run_stream("Howdy!", agent="mock"):
+    async with Client(base_url="http://test") as client:
+        async for event in client.run_stream("Howdy!", agent=mock_run.agent_name):
+            assert event == mock_event
+
+
+@pytest.mark.asyncio
+async def test_run_status(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(url=f"http://test/runs/{mock_run.run_id}", method="GET", content=mock_run.model_dump_json())
+
+    async with Client(base_url="http://test") as client:
+        run = await client.run_status(run_id=mock_run.run_id)
+        assert run == mock_run
+
+
+@pytest.mark.asyncio
+async def test_run_cancel(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        url=f"http://test/runs/{mock_run.run_id}/cancel", method="POST", content=mock_run.model_dump_json()
+    )
+
+    async with Client(base_url="http://test") as client:
+        run = await client.run_cancel(run_id=mock_run.run_id)
+        assert run == mock_run
+
+
+@pytest.mark.asyncio
+async def test_run_resume_sync(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        url=f"http://test/runs/{mock_run.run_id}", method="POST", content=mock_run.model_dump_json()
+    )
+
+    async with Client(base_url="http://test") as client:
+        run = await client.run_resume_sync(MessageAwaitResume(message=Message(parts=[])), run_id=mock_run.run_id)
+        assert run == mock_run
+
+
+@pytest.mark.asyncio
+async def test_run_resume_async(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        url=f"http://test/runs/{mock_run.run_id}", method="POST", content=mock_run.model_dump_json()
+    )
+
+    async with Client(base_url="http://test") as client:
+        run = await client.run_resume_async(MessageAwaitResume(message=Message(parts=[])), run_id=mock_run.run_id)
+        assert run == mock_run
+
+
+@pytest.mark.asyncio
+async def test_run_resume_stream(httpx_mock: HTTPXMock) -> None:
+    mock_event = RunCompletedEvent(run=mock_run)
+    httpx_mock.add_response(
+        url=f"http://test/runs/{mock_run.run_id}",
+        method="POST",
+        headers={"content-type": "text/event-stream"},
+        content=f"data: {mock_event.model_dump_json()}\n\n",
+    )
+
+    async with Client(base_url="http://test") as client:
+        async for event in client.run_resume_stream(
+            MessageAwaitResume(message=Message(parts=[])), run_id=mock_run.run_id
+        ):
             assert event == mock_event
