@@ -6,7 +6,8 @@ description: "Get up and running with ACP"
 This guide will walk you through using the Agent Communication Protocol (ACP) to create and run your first agent, interact with it using HTTP requests, and build a basic client.
 
 <Note>
-This guide uses `uv`. See the [`uv` primer](/introduction/uv-primer) for more details.
+  This guide uses `uv`. See the [`uv` primer](/introduction/uv-primer) for more
+  details.
 </Note>
 
 <Steps>
@@ -67,9 +68,9 @@ Your server should now be running at http://localhost:8000.
 
 </Step>
 <Step title="Verify your agent is available">
-<CodeGroup>
-
 In another terminal, run the following `curl` command:
+
+<CodeGroup>
 
 ```sh Request
 curl http://localhost:8000/agents
@@ -86,7 +87,6 @@ curl http://localhost:8000/agents
 </CodeGroup>
 
 You should see a JSON response containing your `echo` agent, confirming it's available.
-
 
 </Step>
 <Step title="Run the agent via HTTP">
