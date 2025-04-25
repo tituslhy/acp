@@ -1,3 +1,6 @@
+import json
+import uuid
+
 import pytest
 from acp_sdk.client import Client
 from acp_sdk.models import Agent, AgentsListResponse, Message, MessagePart, Run, RunCompletedEvent
@@ -6,7 +9,9 @@ from pytest_httpx import HTTPXMock
 
 mock_agent = Agent(name="mock")
 mock_agents = [mock_agent]
-mock_run = Run(agent_name=mock_agent.name, output=[Message(parts=[MessagePart(content="Hello!")])])
+mock_run = Run(
+    agent_name=mock_agent.name, session_id=uuid.uuid4(), output=[Message(parts=[MessagePart(content="Hello!")])]
+)
 
 
 @pytest.mark.asyncio
@@ -121,3 +126,20 @@ async def test_run_resume_stream(httpx_mock: HTTPXMock) -> None:
             MessageAwaitResume(message=Message(parts=[])), run_id=mock_run.run_id
         ):
             assert event == mock_event
+
+
+@pytest.mark.asyncio
+async def test_session(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(url="http://test/runs", method="POST", content=mock_run.model_dump_json(), is_reusable=True)
+
+    async with Client(base_url="http://test") as client, client.session(mock_run.session_id) as session:
+        assert session._session_id == mock_run.session_id
+        await session.run_sync("Howdy!", agent=mock_run.agent_name)
+        await client.run_sync("Howdy!", agent=mock_run.agent_name)
+
+    requests = httpx_mock.get_requests()
+    body = json.loads(requests[0].content)
+    assert body["session_id"] == str(mock_run.session_id)
+
+    body = json.loads(requests[1].content)
+    assert body["session_id"] is None
