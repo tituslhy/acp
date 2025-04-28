@@ -15,6 +15,7 @@ members = [
     "basic",
     "beeai-canvas",
     "beeai-framework-chat",
+    "beeai-handoff",
     "crewai-song-writer",
     "lang-graph-greeting",
     "prompt-chaining",
@@ -429,6 +430,23 @@ dependencies = [
 requires-dist = [
     { name = "acp-sdk", editable = "python" },
     { name = "beeai-framework", extras = ["duckduckgo", "wikipedia"], specifier = ">=0.1.17" },
+    { name = "pydantic-settings", specifier = ">=2.9.0" },
+]
+
+[[package]]
+name = "beeai-handoff"
+version = "0.1.0"
+source = { virtual = "examples/python/beeai-handoff" }
+dependencies = [
+    { name = "acp-sdk" },
+    { name = "beeai-framework" },
+    { name = "pydantic-settings" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "acp-sdk", editable = "python" },
+    { name = "beeai-framework", specifier = ">=0.1.17" },
     { name = "pydantic-settings", specifier = ">=2.9.0" },
 ]
 
