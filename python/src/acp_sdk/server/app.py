@@ -96,6 +96,10 @@ def create_app(*agents: Agent, run_limit: int = 1000, run_ttl: timedelta = timed
         agent = find_agent(name)
         return AgentModel(name=agent.name, description=agent.description, metadata=agent.metadata)
 
+    @app.get("/healthcheck")
+    async def healthcheck() -> str:
+        return "OK"
+
     @app.post("/runs")
     async def create_run(request: RunCreateRequest) -> RunCreateResponse:
         agent = find_agent(request.agent_name)
