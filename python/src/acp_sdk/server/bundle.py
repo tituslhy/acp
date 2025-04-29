@@ -44,6 +44,7 @@ class RunBundle:
         self.history = history
 
         self.stream_queue: asyncio.Queue[Event] = asyncio.Queue()
+        self.events: list[Event] = []
 
         self.await_queue: asyncio.Queue[AwaitResume] = asyncio.Queue(maxsize=1)
         self.await_or_terminate_event = asyncio.Event()
@@ -59,7 +60,9 @@ class RunBundle:
             self.stream_queue.task_done()
 
     async def emit(self, event: Event) -> None:
-        await self.stream_queue.put(event)
+        freeze = event.model_copy(deep=True)
+        self.events.append(freeze)
+        await self.stream_queue.put(freeze)
 
     async def await_(self) -> AwaitResume:
         await self.stream_queue.put(None)

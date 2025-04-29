@@ -9,8 +9,8 @@ from acp_sdk.models import (
     ErrorCode,
     Message,
     MessageAwaitResume,
-    MessageCreatedEvent,
     MessagePart,
+    MessagePartEvent,
     RunCompletedEvent,
     RunCreatedEvent,
     RunInProgressEvent,
@@ -49,6 +49,24 @@ async def test_run_status(server: Server, client: Client) -> None:
     while run.status in (RunStatus.CREATED, RunStatus.IN_PROGRESS):
         run = await client.run_status(run_id=run.run_id)
     assert run.status == RunStatus.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_run_events(server: Server, client: Client) -> None:
+    run = await client.run_sync(agent="echo", input=input)
+    events = [event async for event in client.run_events(run_id=run.run_id)]
+    assert isinstance(events[0], RunCreatedEvent)
+    assert isinstance(events[-1], RunCompletedEvent)
+
+
+@pytest.mark.asyncio
+async def test_run_events_are_stream(server: Server, client: Client) -> None:
+    stream = [event async for event in client.run_stream(agent="echo", input=input)]
+    print(stream)
+    assert isinstance(stream[0], RunCreatedEvent)
+    events = [event async for event in client.run_events(run_id=stream[0].run.run_id)]
+    print(events)
+    assert stream == events
 
 
 @pytest.mark.asyncio
@@ -184,11 +202,11 @@ async def test_artifact_streaming(server: Server, client: Client) -> None:
     assert isinstance(events[0], RunCreatedEvent)
     assert isinstance(events[-1], RunCompletedEvent)
 
-    message_events = [e for e in events if isinstance(e, MessageCreatedEvent)]
+    message_part_events = [e for e in events if isinstance(e, MessagePartEvent)]
     artifact_events = [e for e in events if isinstance(e, ArtifactEvent)]
 
-    assert len(message_events) == 1
-    assert message_events[0].message.parts[0].content == "Processing with artifacts"
+    assert len(message_part_events) == 1
+    assert message_part_events[0].part.content == "Processing with artifacts"
 
     assert len(artifact_events) == 3
 
