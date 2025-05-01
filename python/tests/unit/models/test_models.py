@@ -26,7 +26,27 @@ timestamp = "2021-09-09T22:02:47.89Z"
                 created_at=timestamp,
                 completed_at=timestamp,
             ),
-        )
+        ),
+        (
+            Message(
+                parts=[MessagePart(content_type="text/plain", content="Foo")],
+                created_at=None,
+                completed_at=timestamp,
+            ),
+            Message(
+                parts=[MessagePart(content_type="text/plain", content="Bar")],
+                created_at=timestamp,
+                completed_at=None,
+            ),
+            Message(
+                parts=[
+                    MessagePart(content_type="text/plain", content="Foo"),
+                    MessagePart(content_type="text/plain", content="Bar"),
+                ],
+                created_at=None,
+                completed_at=None,
+            ),
+        ),
     ],
 )
 def test_message_add(first: Message, second: Message, result: Message) -> None:

@@ -95,7 +95,7 @@ class Artifact(MessagePart):
 
 class Message(BaseModel):
     parts: list[MessagePart]
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def __add__(self, other: "Message") -> "Message":
@@ -103,8 +103,10 @@ class Message(BaseModel):
             raise TypeError(f"Cannot concatenate Message with {type(other).__name__}")
         return Message(
             parts=self.parts + other.parts,
-            created_at=min(self.created_at, other.created_at),
-            completed_at=max(self.completed_at, other.completed_at),
+            created_at=min(self.created_at, other.created_at) if self.created_at and other.created_at else None,
+            completed_at=max(self.completed_at, other.completed_at)
+            if self.completed_at and other.completed_at
+            else None,
         )
 
     def __str__(self) -> str:
