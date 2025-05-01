@@ -287,7 +287,6 @@ components:
           format: date-time
       required:
         - parts
-        - created_at
     AwaitRequest:
       type: object
     AwaitResume:
