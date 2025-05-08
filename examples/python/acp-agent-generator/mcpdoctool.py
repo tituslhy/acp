@@ -9,7 +9,7 @@ if __name__ == "__main__":
         [
             {
                 "name": "Agent Communication Protocol Documentation",
-                "llms_txt": "https://agentcommunicationprotocol.dev/llms-full.txt"
+                "llms_txt": "https://agentcommunicationprotocol.dev/llms-full.txt",
             },
             {
                 "name": "Langraph Documentation",
@@ -19,7 +19,6 @@ if __name__ == "__main__":
                 "name": "BeeAI Documentation",
                 "llms_txt": "https://docs.beeai.dev/llms-full.txt",
             },
-           
             # You can add multiple documentation sources
             # {
             #     "name": "Another Documentation",

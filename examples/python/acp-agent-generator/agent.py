@@ -17,47 +17,50 @@ import os
 load_dotenv()
 
 
-
 class SessionManager:
     def __init__(self):
         self.exit_stack = AsyncExitStack()
         self.tools = None
         self.agent = None
         self.initialized = False
-        
+
         # Create LLM model
         self.model = init_chat_model(
             model=os.getenv("LLM_MODEL_NAME", "openai:gpt-4.1-mini"),
-            max_tokens= 8000,
+            max_tokens=8000,
         )
-        
+
         self.server_params = StdioServerParameters(
             command="python",
-            args=['mcpdoctool.py'],
+            args=["mcpdoctool.py"],
             transport="stdio",
         )
-    
+
     async def initialize(self):
         if self.initialized:
             return
-        
+
         try:
             # Setup stdio client with exit stack to manage resources
-            stdio_context = await self.exit_stack.enter_async_context(stdio_client(self.server_params))
+            stdio_context = await self.exit_stack.enter_async_context(
+                stdio_client(self.server_params)
+            )
             read_stream, write_stream = stdio_context
-            
+
             # Setup session
-            session = await self.exit_stack.enter_async_context(ClientSession(read_stream, write_stream))
-            
+            session = await self.exit_stack.enter_async_context(
+                ClientSession(read_stream, write_stream)
+            )
+
             # Initialize the connection
             await session.initialize()
-            
+
             # Get tools
             self.tools = await load_mcp_tools(session)
-            
+
             # Create the agent
             self.agent = create_react_agent(self.model, self.tools)
-            
+
             self.initialized = True
             print("Session initialized with tools and agent ready")
         except Exception as e:
@@ -74,18 +77,20 @@ class SessionManager:
 server = Server()
 session_manager = SessionManager()
 
+
 @server.agent()
 async def acp_agent_generator(input: list[Message], context: Context) -> AsyncGenerator:
     # Ensure session is initialized
     if not session_manager.initialized:
         print("Session not initialized, initializing now...")
         await session_manager.initialize()
-    
-    print(input[0].parts[0].content)
-    response = await session_manager.agent.ainvoke({'messages': [HumanMessage(input[0].parts[0].content)]})
-    print(response)
-    yield response['messages'][-1].content
 
+    print(input[0].parts[0].content)
+    response = await session_manager.agent.ainvoke(
+        {"messages": [HumanMessage(input[0].parts[0].content)]}
+    )
+    print(response)
+    yield response["messages"][-1].content
 
 
 if __name__ == "__main__":
