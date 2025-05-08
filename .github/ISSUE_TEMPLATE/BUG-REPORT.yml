@@ -1,7 +1,7 @@
 name: Bug Report
 description: File a bug report.
 title: <Brief summary of the issue>
-labels: "Bug"
+type: "Bug"
 projects: ["ACP"]
 body:
   - type: markdown
@@ -19,15 +19,12 @@ body:
     id: what-happened
     attributes:
       label: What happened?
-      description: “Tell us what you saw and what you expected!”
-      placeholder: Tell us what you see!
-      value: "A bug happened!"
+      placeholder: Tell us what you saw and what you expected!
     validations:
       required: true
   - type: textarea
     attributes:
       label: Steps To Reproduce
-      description: Steps to reproduce the behavior.
       placeholder: |
         1. In this environment...
         1. With this config...

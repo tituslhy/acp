@@ -1,7 +1,7 @@
 name: Feature request
 description: Request a Feature to be added.
-title: "[Feature] <title> "
-labels: ["Feature"]
+title: "<Brief summary of the issue>"
+type: "Feature"
 projects: ["ACP"]
 body:
    - type: markdown
@@ -11,10 +11,9 @@ body:
    - type: textarea
      id: describe-problem
      attributes:
-       label: Describe the problem this feature would solve.
+       label: Describe the problem this feature would solve
        description: Add as much detail as you can, if not related to a problem skip this section and explain your feature request below.
-       placeholder: Statement of the problem to fix.
-       value: "Problem fix with a feature."
+       placeholder: Describe the problem this feature would solve
      validations:
        required: false
    - type: textarea
@@ -44,7 +43,7 @@ body:
      id: terms
      attributes:
        label: Code of Conduct
-       description: By submitting this issue, you agree to follow our [Code of Conduct](https://example.com). 
+       description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/i-am-bee/acp/blob/main/CODE_OF_CONDUCT.md). 
        options:
          - label: I agree to follow this project's Code of Conduct
            required: true
