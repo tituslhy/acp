@@ -111,6 +111,11 @@ class Server:
         if self.server:
             raise RuntimeError("The server is already running")
 
+        if headers is None:
+            headers = [("server", "acp")]
+        elif not any(k.lower() == "server" for k, _ in headers):
+            headers.append(("server", "acp"))
+
         import uvicorn
 
         if configure_logger:
