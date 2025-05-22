@@ -1,6 +1,9 @@
 # Agent Communication Protocol SDK for Typescript
 
-Agent Communication Protocol SDK for Typescript helps developers to serve and consume agents over the Agent Communication Protocol.
+Agent Communication Protocol SDK for Typescript helps developers to consume agents over the Agent Communication Protocol.
+
+> [!Note]
+> Currently, the SDK only contains ACP client and data models. Server implementation is coming soon!
 
 ## Installation
 
@@ -12,6 +15,9 @@ Install according to your package manager:
 - ...
 
 ## Quickstart
+
+> [!TIP]
+> Make sure you have an ACP server running at port `8000`. The server is currently only implemented in [python](/python).
 
 Run an agent:
 
