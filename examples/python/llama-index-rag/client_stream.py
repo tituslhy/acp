@@ -6,7 +6,7 @@ from acp_sdk.models import Message, MessagePart, MessageCompletedEvent, GenericE
 async def client() -> None:
     async with Client(base_url="http://localhost:8000") as client:
         async for event in client.run_stream(
-            agent="llamaindex_rag_agent", input=[Message(parts=[MessagePart(content="What is Docling?")])]
+            agent="llamaindex_rag_agent", input="What is Docling?"
         ):
             match event:
                 case MessageCompletedEvent():

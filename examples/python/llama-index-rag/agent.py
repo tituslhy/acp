@@ -55,7 +55,7 @@ async def llamaindex_rag_agent(input: list[Message]) -> AsyncGenerator:
         if isinstance(ev, AgentStream):
             yield ev.delta
     response = await handler
-    yield MessagePart(content=str(response))
+    yield str(response)
 
 if __name__ == "__main__":
     server.run()

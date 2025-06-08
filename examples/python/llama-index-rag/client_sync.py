@@ -9,7 +9,7 @@ from acp_sdk.models import (
 async def client() -> None:
     async with Client(base_url="http://localhost:8000") as client:
         run = await client.run_sync(
-            agent="llamaindex_rag_agent", input=[Message(parts=[MessagePart(content="What is Docling?")])]
+            agent="llamaindex_rag_agent", input="What is Docling?"
         )
         print(run.output[-1])
 
